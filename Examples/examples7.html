@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Strength Checker</title>
+    <style>
+        :root{--bg:#0f1115;--card:#44000f;--muted:#ffe3f9;--accent:#fdc50c;--warn:#8800e2;--glass: rgba(255,255,255,0.03);} 
+        *{box-sizing:border-box}
+        body{margin:0;height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#000000 0%,#5f0020 100%);font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial;color:#ffa4e8}
+        .card{width:100%;max-width:560px;background:linear-gradient(180deg,var(--card),#81003c);padding:28px;border-radius:12px;box-shadow:0 8px 30px rgba(2,6,23,.6);border:1px solid rgba(255,255,255,0.03)}
+        h1{margin:0 0 12px;font-size:20px;letter-spacing:0.6px}
+        p.muted{margin:0 0 18px;color:var(--muted);font-size:13px}
+
+        .row{display:flex;gap:10px;align-items:center}
+        .input-wrap{flex:1;position:relative}
+        input[type=password]{width:100%;padding:12px 14px;border-radius:8px;border:1px solid rgba(255, 255, 255, 0.04);background:var(--glass);color:inherit;font-size:15px}
+        .toggle{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted);padding:8px 10px;border-radius:8px;cursor:pointer}
+
+        .criteria{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:14px}
+        .crit{font-size:13px;color:var(--muted);display:flex;gap:8px;align-items:center}
+        .dot{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,0.06)}
+        .dot.ok{background:var(--accent);box-shadow:0 0 8px rgba(34, 255, 41, 0.18)}
+        .dot.warn{background:var(--warn);box-shadow:0 0 8px rgba(255,107,107,.14)}
+
+        .strength{margin-top:16px}
+        .bar{height:12px;border-radius:8px;background:rgba(228, 26, 26, 0.04);overflow:hidden}
+        .bar-inner{height:100%;width:0%;background:linear-gradient(90deg,var(--warn),#ff89ce 50%,var(--accent));transition:width .45s ease,box-shadow .35s ease}
+        .score-label{margin-top:8px;font-size:13px;color:var(--muted);display:flex;justify-content:space-between}
+
+        .hint{margin-top:12px;font-size:13px;color:var(--muted)}
+        .result{margin-top:14px;padding:10px;border-radius:8px;background:rgba(184, 150, 150, 0.02);font-size:14px}
+    </style>
+</head>
+<body>
+    <div class="card" role="region" aria-label="Password strength checker">
+        <h1>₍ᐢ. .ᐢ₎ Password Strength Checker ╰┈➤</h1>
+        <p class="muted">Type a password to evaluate length, case, numbers and symbols. All checks run in your browser.</p>
+
+        <div class="row">
+            <div class="input-wrap">
+                <input id="pwd" type="password" placeholder="Enter password" aria-label="Password input">
+            </div>
+            <button id="toggle" class="toggle" aria-pressed="false">Show</button>
+        </div>
+
+        <div class="criteria" id="criteria">
+            <div class="crit" id="c-length"><span class="dot" id="d-length"></span> At least 8 chars</div>
+            <div class="crit" id="c-case"><span class="dot" id="d-case"></span> Upper & lower</div>
+            <div class="crit" id="c-number"><span class="dot" id="d-number"></span> Contains number</div>
+            <div class="crit" id="c-symbol"><span class="dot" id="d-symbol"></span> Contains symbol</div>
+        </div>
+
+        <div class="strength">
+            <div class="bar" aria-hidden="true"><div id="barInner" class="bar-inner"></div></div>
+            <div class="score-label"><span id="strengthText">Very weak</span><span id="scorePct">0%</span></div>
+        </div>
+
+        <div class="hint">Tip: use a mix of long length, upper/lower, numbers and symbols for a strong password.</div>
+        <div id="error" class="result" aria-live="assertive" style="display:none;color:var(--warn);"></div>
+        <div id="result" class="result" aria-live="polite" style="display:none"></div>
+    </div>
+
+    <script>
+        const pwd = document.getElementById('pwd');
+        const toggle = document.getElementById('toggle');
+        const barInner = document.getElementById('barInner');
+        const strengthText = document.getElementById('strengthText');
+        const scorePct = document.getElementById('scorePct');
+        const result = document.getElementById('result');
+
+        const dots = {
+            length: document.getElementById('d-length'),
+            case: document.getElementById('d-case'),
+            number: document.getElementById('d-number'),
+            symbol: document.getElementById('d-symbol')
+        };
+        const errorEl = document.getElementById('error');
+
+
+        function scorePassword(s){
+            let score = 0;
+            const checks = {
+                length: s.length >= 8,
+                long: s.length >= 12,
+                case: /[a-z]/.test(s) && /[A-Z]/.test(s),
+                number: /\d/.test(s),
+                symbol: /[^A-Za-z0-9]/.test(s)
+            };
+            if(checks.length) score += 1;
+            if(checks.long) score += 1; // bonus for longer passwords
+            if(checks.case) score += 1;
+            if(checks.number) score += 1;
+            if(checks.symbol) score += 1;
+            return {score,checks};
+        }
+
+        function updateUI(){
+            const value = pwd.value || '';
+            // digit limit check
+            const digitCount = (value.match(/\d/g) || []).length;
+            if(digitCount > 3){
+                errorEl.textContent = 'Password may contain at most 3 digits.';
+                errorEl.style.display = 'block';
+                result.style.display = 'none';
+                return;
+            }
+            // forbid month names (DOB in words)
+            const months = ['january','february','march','april','may','june','july','august','september','october','november','december'];
+            if(months.some(m=>value.toLowerCase().includes(m))){
+                errorEl.textContent = 'Do not write your date of birth in words.';
+                errorEl.style.display = 'block';
+                result.style.display = 'none';
+                return;
+            }
+            errorEl.style.display = 'none';
+
+            const {score,checks} = scorePassword(value);
+            const max = 5; // max possible score
+            const pct = Math.round((score / max) * 100);
+            // set dots
+            dots.length.className = 'dot ' + (checks.length ? 'ok' : '');
+            dots.case.className = 'dot ' + (checks.case ? 'ok' : '');
+            dots.number.className = 'dot ' + (checks.number ? 'ok' : '');
+            dots.symbol.className = 'dot ' + (checks.symbol ? 'ok' : '');
+
+            // bar width and color intensity by pct
+            barInner.style.width = pct + '%';
+            barInner.style.boxShadow = pct > 50 ? '0 8px 24px rgba(76,175,80,.12)' : '0 6px 18px rgba(240,99,99,.08)';
+
+            // descriptive label
+            let label = 'Very weak';
+            if(pct >= 80) label = 'Excellent';
+            else if(pct >= 60) label = 'Strong';
+            else if(pct >= 40) label = 'Moderate';
+            else if(pct >= 20) label = 'Weak';
+
+            strengthText.textContent = label;
+            scorePct.textContent = pct + '%';
+
+            // result suggestion
+            if(value.length === 0){
+                result.style.display = 'none';
+            } else {
+                result.style.display = 'block';
+                const suggestions = [];
+                if(!checks.length) suggestions.push('Use at least 8 characters');
+                if(!checks.case) suggestions.push('Mix upper & lower case letters');
+                if(!checks.number) suggestions.push('Add numbers');
+                if(!checks.symbol) suggestions.push('Add symbols or punctuation');
+                if(suggestions.length === 0){
+                    result.textContent = 'Great — your password looks strong.';
+                } else {
+                    result.textContent = 'Suggestions: ' + suggestions.join('; ') + '.';
+                }
+            }
+        }
+
+        pwd.addEventListener('input', () => requestAnimationFrame(updateUI));
+        toggle.addEventListener('click', ()=>{
+            const shown = pwd.type === 'text';
+            pwd.type = shown ? 'password' : 'text';
+            toggle.textContent = shown ? 'Show' : 'Hide';
+            toggle.setAttribute('aria-pressed', String(!shown));
+        });
+
+        // initialize
+        updateUI();
+    </script>
+</body>
+</html>

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Social Media Lifetime</title>
+    <style>
+        :root {
+            --bg: #111;
+            --fg: #eee;
+            --accent: #ff4757;
+        }
+        *{box-sizing:border-box;}
+        body{margin:0;font-family:'Arial Black', Gadget, sans-serif;background:var(--bg);color:var(--fg);display:flex;justify-content:center;align-items:center;height:100vh;padding:1rem;}
+        .container{max-width:500px;width:100%;text-align:center;}
+        h1{font-size:2.5rem;margin-bottom:1rem;color:var(--accent);}
+        label{display:block;margin-top:1rem;font-size:1.1rem;}
+        input[type=number]{width:100%;padding:0.6rem;font-size:1rem;border:none;border-radius:4px;margin-top:0.3rem;}
+        button{margin-top:1rem;padding:0.7rem 1.4rem;font-size:1rem;border:none;border-radius:4px;background:var(--accent);color:#111;cursor:pointer;font-weight:700;}
+        .results{margin-top:2rem;}
+        .result-item{font-size:1.5rem;margin:0.8rem 0;}
+        .counter{display:inline-block;min-width:4ch;}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Lifetime on Social Media</h1>
+        <label for="hours">Daily hours spent</label>
+        <input type="number" id="hours" min="0" max="24" value="0">
+        <button id="calculate">Calculate</button>
+        <div class="results" id="results">
+            <div class="result-item">Hours per year: <span class="counter" id="year-hours">0</span></div>
+            <div class="result-item">Days per year: <span class="counter" id="year-days">0</span></div>
+            <div class="result-item">% of waking life: <span class="counter" id="percent">0</span>%</div>
+        </div>
+    </div>
+    <script>
+        const hoursInput = document.getElementById('hours');
+        const calculateBtn = document.getElementById('calculate');
+        const yearHoursEl = document.getElementById('year-hours');
+        const yearDaysEl = document.getElementById('year-days');
+        const percentEl = document.getElementById('percent');
+
+        function animate(el, end, duration=800) {
+            const start = 0;
+            const range = end - start;
+            let startTime = null;
+            function step(timestamp) {
+                if (!startTime) startTime = timestamp;
+                const progress = Math.min((timestamp - startTime) / duration, 1);
+                el.textContent = Math.floor(progress * range + start);
+                if (progress < 1) requestAnimationFrame(step);
+            }
+            requestAnimationFrame(step);
+        }
+
+        function calculate() {
+            const daily = parseFloat(hoursInput.value) || 0;
+            const yearlyHours = daily * 365;
+            const yearlyDays = yearlyHours / 24;
+            const waking = 16 * 365; // assuming 16 waking hours per day
+            const pct = waking > 0 ? Math.round((yearlyHours / waking) * 100) : 0;
+            animate(yearHoursEl, Math.round(yearlyHours));
+            animate(yearDaysEl, Math.round(yearlyDays));
+            animate(percentEl, pct);
+        }
+
+        calculateBtn.addEventListener('click', calculate);
+    </script>
+</body>
+</html>

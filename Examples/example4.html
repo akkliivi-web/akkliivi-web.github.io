@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cyberpunk Countdown</title>
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --fg: #0ff;
+            --accent: #f0f;
+        }
+        *{box-sizing:border-box;}
+        body{margin:0;font-family:'Segoe UI',sans-serif;background:var(--bg);color:var(--fg);display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;}
+        .container{text-align:center;}
+        h1{font-size:2.5rem;color:var(--accent);margin-bottom:1rem;}
+        input[type=datetime-local]{padding:0.5rem;font-size:1rem;border:none;border-radius:4px;margin-top:1rem;background:#111;color:#fff;}
+        .countdown{display:flex;gap:1rem;font-size:2rem;margin-top:2rem;}
+        .unit{display:flex;flex-direction:column;align-items:center;}
+        .number{position:relative;}
+        .number.glitch{
+            animation:glitch 1s infinite;
+        }
+        @keyframes glitch{
+            0%{transform:none;opacity:1;}
+            20%{transform:translate(-2px,2px);opacity:.8;}
+            40%{transform:translate(2px,-2px);opacity:.6;}
+            60%{transform:translate(-1px,-1px);opacity:.8;}
+            80%{transform:translate(1px,1px);opacity:.9;}
+            100%{transform:none;opacity:1;}
+        }
+        .label{font-size:0.6rem;margin-top:0.3rem;color:#aaa;}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Countdown</h1>
+        <input type="datetime-local" id="target">
+        <div class="countdown" id="countdown">
+            <div class="unit"><div class="number" id="days">0</div><div class="label">Days</div></div>
+            <div class="unit"><div class="number" id="hours">0</div><div class="label">Hours</div></div>
+            <div class="unit"><div class="number" id="minutes">0</div><div class="label">Minutes</div></div>
+            <div class="unit"><div class="number" id="seconds">0</div><div class="label">Seconds</div></div>
+        </div>
+    </div>
+    <script>
+        const targetInput = document.getElementById('target');
+        const daysEl = document.getElementById('days');
+        const hoursEl = document.getElementById('hours');
+        const minutesEl = document.getElementById('minutes');
+        const secondsEl = document.getElementById('seconds');
+
+        let countdownInterval;
+
+        function updateCountdown() {
+            const target = new Date(targetInput.value);
+            const now = new Date();
+            const diff = target - now;
+            if (isNaN(target) || diff <= 0) {
+                clearInterval(countdownInterval);
+                return;
+            }
+            const sec = Math.floor((diff / 1000) % 60);
+            const min = Math.floor((diff / (1000 * 60)) % 60);
+            const hrs = Math.floor((diff / (1000 * 60 * 60)) % 24);
+            const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+            setNumber(daysEl, d);
+            setNumber(hoursEl, hrs);
+            setNumber(minutesEl, min);
+            setNumber(secondsEl, sec);
+        }
+
+        function setNumber(el, value) {
+            el.textContent = value;
+            el.classList.add('glitch');
+            setTimeout(() => el.classList.remove('glitch'), 500);
+        }
+
+        targetInput.addEventListener('change', () => {
+            clearInterval(countdownInterval);
+            updateCountdown();
+            countdownInterval = setInterval(updateCountdown, 1000);
+        });
+    </script>
+</body>
+</html>

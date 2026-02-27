@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excuse Generator</title>
+    <style>
+        /* dark meme-like look */
+        :root {
+            --bg: #15001b;
+            --fg: #ffc508;
+            --accent: #8d14ff;
+            --button-bg: #39074d;
+            --button-hover: #12001d;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin:0; padding:0;
+            background: var(--bg);
+            color: var(--fg);
+            font-family: 'Courier New', Courier, monospace;
+            display:flex; align-items:center; justify-content:center;
+            height:100vh;
+        }
+        .container {
+            text-align:center;
+            max-width:600px;
+            padding:2rem;
+            border:2px solid var(--accent);
+            border-radius:12px;
+            box-shadow:0 0 20px rgba(161, 20, 255, 0.5);
+        }
+        h1 {
+            margin-bottom:1rem;
+            font-size:2rem;
+            text-shadow:0 0 8px var(--accent);
+        }
+        .excuse {
+            min-height:3em;
+            margin:1rem 0;
+            font-size:1.25rem;
+            line-height:1.4;
+        }
+        .typing::after {
+            content:' ';
+            display:inline-block;
+            width:1ch;
+            background:var(--fg);
+            animation:blink 1s steps(1) infinite;
+        }
+        @keyframes blink { 0%,100%{opacity:1;}50%{opacity:0;} }
+        button {
+            background:var(--button-bg);
+            color:var(--fg);
+            border:1px solid var(--accent);
+            padding:0.6rem 1.2rem;
+            margin:0 0.5rem;
+            font-size:1rem;
+            cursor:pointer;
+            border-radius:6px;
+            transition:background .2s;
+        }
+        button:hover { background:var(--button-hover); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>≽◉˕ ◉ ≼マ Programming Excuse Generator݁ ˖Ი𐑼⋆</h1>
+        <div id="excuse" class="excuse"></div>
+        <div class="buttons">
+            <button id="generate">Generate again</button>
+            <button id="joke">Tell a joke</button>
+            <button id="copy">Copy</button>
+            <button id="meow">Meow</button>
+        </div>
+    </div>
+    <script>
+        const subjects = [
+            'The compiler', 'My rubber duck', 'The server', 'The cloud',
+            'GitHub', 'Stack Overflow', 'The CPU', 'The database',
+            'The framework', 'My keyboard'
+        ];
+        const verbs = [
+            'ate', 'destroyed', 'lost', 'refused', 'crashed',
+            'compiled', 'rejected', 'debugged', 'corrupted', 'ignored'
+        ];
+        const objects = [
+            'my code', 'the module', 'the commit', 'the server logs',
+            'the API', 'the variables', 'the build', 'the function'
+        ];
+        const extras = [
+            'because it was feeling moody', 'during a solar eclipse',
+            'while I wasn\'t looking', 'due to cosmic rays',
+            'after a coffee spill', 'because of a bug',
+            'for reasons unknown', 'when Mercury was in retrograde'
+        ];
+
+        const jokes = [
+            'Why do programmers prefer dark mode? Because light attracts bugs.',
+            'There are 10 types of people in the world: those who understand binary and those who don\'t.',
+            'I told my computer I needed a break, and it said "No problem — I\'ll go to sleep."',
+            'Debugging: Being the detective in a crime movie where you are also the murderer.',
+            'Why did the developer go broke? Because he used up all his cache.'
+        ];
+
+        const meow = [
+            'Meow.', 
+            'MEOWWWWWW.', 
+            'Mew.'
+        ];
+
+        const excuseEl = document.getElementById('excuse');
+        const genBtn = document.getElementById('generate');
+        const jokeBtn = document.getElementById('joke');
+        const copyBtn = document.getElementById('copy');
+        const meowBtn = document.getElementById('meow');
+        let current = '';
+
+        function rand(arr) {
+            return arr[Math.floor(Math.random() * arr.length)];
+        }
+        
+        function makeExcuse() {
+            return `${rand(subjects)} ${rand(verbs)} ${rand(objects)} ${rand(extras)}.`;
+        }
+
+        function animateText(el, text) {
+            el.textContent = '';
+            el.classList.add('typing');
+            let i = 0;
+            const step = () => {
+                if (i < text.length) {
+                    el.textContent += text.charAt(i);
+                    i++;
+                    setTimeout(step, 40);
+                } else {
+                    el.classList.remove('typing');
+                }
+            };
+            step();
+        }
+
+        function generate() {
+            current = makeExcuse();
+            animateText(excuseEl, current);
+        }
+
+        genBtn.addEventListener('click', generate);
+
+        jokeBtn.addEventListener('click', () => {
+            current = rand(jokes);
+            animateText(excuseEl, current);
+        });
+
+        meowBtn.addEventListener('click', () => {
+            current = rand(meow);
+            animateText(excuseEl, current);
+        });
+
+        copyBtn.addEventListener('click', () => {
+            if (!current) return;
+            navigator.clipboard.writeText(current).then(() => {
+                copyBtn.textContent = 'Copied!';
+                setTimeout(() => copyBtn.textContent = 'Copy to clipboard', 1500);
+            }).catch(() => {
+                alert('Failed to copy');
+            });
+        });
+
+        // generate on load
+        generate();
+    </script>
+</body>
+</html>

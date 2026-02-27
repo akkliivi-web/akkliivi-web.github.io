@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Budget Simulator</title>
+    <style>
+        :root {
+            --bg: #f5f5f5;
+            --fg: #333;
+            --accent: #4caf50;
+            --warning: #e53935;
+            --card: #fff;
+            --shadow: rgba(0,0,0,0.1);
+        }
+        *{box-sizing:border-box;}
+        body{margin:0;font-family:system-ui, sans-serif;background:var(--bg);color:var(--fg);display:flex;justify-content:center;padding:2rem;}
+        .container{width:100%;max-width:600px;background:var(--card);padding:2rem;border-radius:8px;box-shadow:0 4px 12px var(--shadow);}
+        h1{margin-top:0;text-align:center;}
+        label{display:block;margin:0.5rem 0 0.2rem;}
+        input[type=number]{width:100%;padding:0.5rem;border:1px solid #ccc;border-radius:4px;}
+        button{margin-top:1rem;padding:0.6rem 1rem;border:none;border-radius:4px;background:var(--accent);color:#fff;cursor:pointer;}
+        button:hover{opacity:0.9;}
+        .expenses{margin-top:1.5rem;}
+        .expense-item{display:flex;gap:0.5rem;margin-bottom:0.5rem;}
+        .expense-item input{flex:1;}
+        .totals{margin-top:1.5rem;font-weight:600;display:flex;justify-content:space-between;}
+        .chart{margin-top:2rem;position:relative;height:150px;background:#eee;border-radius:4px;overflow:hidden;}
+        .chart-bar{position:absolute;bottom:0;width:1px;background:var(--accent);}
+        .warning{color:var(--warning);margin-top:1rem;text-align:center;}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Budget Simulator</h1>
+        <label for="income">Monthly Income</label>
+        <input type="number" id="income" min="0" value="0">
+
+        <div class="expenses">
+            <h2>Expenses</h2>
+            <div id="expense-list"></div>
+            <button id="add-expense">Add expense</button>
+        </div>
+
+        <div class="totals">
+            <div>Total: $<span id="total">0</span></div>
+            <div>Balance: $<span id="balance">0</span></div>
+        </div>
+        <div id="warning" class="warning"></div>
+        <div class="chart" id="chart"></div>
+    </div>
+
+    <script>
+        const incomeInput = document.getElementById('income');
+        const expenseList = document.getElementById('expense-list');
+        const addBtn = document.getElementById('add-expense');
+        const totalEl = document.getElementById('total');
+        const balanceEl = document.getElementById('balance');
+        const warningEl = document.getElementById('warning');
+        const chartEl = document.getElementById('chart');
+
+        function recalc() {
+            const income = parseFloat(incomeInput.value) || 0;
+            let sum = 0;
+            const expenses = [];
+            expenseList.querySelectorAll('.expense-item').forEach(div => {
+                const val = parseFloat(div.querySelector('input').value) || 0;
+                sum += val;
+                expenses.push(val);
+            });
+            totalEl.textContent = sum.toFixed(2);
+            const balance = income - sum;
+            balanceEl.textContent = balance.toFixed(2);
+            warningEl.textContent = balance < 0 ? '⚠️ Negative balance!' : '';
+            drawChart(expenses, income);
+        }
+
+        function drawChart(expenses, income) {
+            chartEl.innerHTML = '';
+            if(income <= 0) return;
+            const width = chartEl.clientWidth;
+            const max = Math.max(...expenses, income);
+            expenses.forEach((val,i)=>{
+                const bar = document.createElement('div');
+                bar.className='chart-bar';
+                const h = (val / max) * chartEl.clientHeight;
+                bar.style.height = h + 'px';
+                bar.style.left = ((i / expenses.length) * width) + 'px';
+                bar.style.width = (width / expenses.length) + 'px';
+                chartEl.appendChild(bar);
+            });
+        }
+
+        function addExpense() {
+            const div = document.createElement('div');
+            div.className = 'expense-item';
+            const inp = document.createElement('input');
+            inp.type = 'number'; inp.min='0'; inp.value='0';
+            inp.addEventListener('input', recalc);
+            const btn = document.createElement('button');
+            btn.textContent = '✖';
+            btn.style.background='transparent';
+            btn.style.color=varComputed('--warning');
+            btn.style.border='none';
+            btn.style.cursor='pointer';
+            btn.addEventListener('click',()=>{div.remove();recalc();});
+            div.appendChild(inp);
+            div.appendChild(btn);
+            expenseList.appendChild(div);
+            recalc();
+        }
+
+        function varComputed(name){return getComputedStyle(document.documentElement).getPropertyValue(name);}
+        
+        addBtn.addEventListener('click', addExpense);
+        incomeInput.addEventListener('input', recalc);
+        // start with one expense row
+        addExpense();
+    </script>
+</body>
+</html>

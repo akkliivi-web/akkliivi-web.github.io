@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Corporate Phrase Generator</title>
+    <style>
+        :root {
+            --bg: #121212;
+            --fg: #e0e0e0;
+            --accent: #ff5722;
+            --button-bg: #1e1e1e;
+            --button-hover: #2a2a2a;
+        }
+        *{box-sizing:border-box;}
+        body{margin:0;font-family:system-ui, sans-serif;background:var(--bg);color:var(--fg);display:flex;align-items:center;justify-content:center;height:100vh;padding:1rem;}
+        .container{max-width:600px;width:100%;text-align:center;padding:2rem;border:2px solid var(--accent);border-radius:10px;}
+        h1{margin-bottom:1rem;color:var(--accent);}
+        .phrase{min-height:3em;margin:1rem 0;font-size:1.25rem;line-height:1.4;position:relative;}
+        .phrase.typed::after{content:'';position:absolute;right:0;top:0;width:1ch;height:1.2em;background:var(--fg);animation:blink 1s steps(1) infinite;}
+        @keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}
+        button{background:var(--button-bg);color:var(--fg);border:1px solid var(--accent);padding:0.6rem 1.2rem;margin:0 0.5rem;font-size:1rem;cursor:pointer;border-radius:6px;transition:background .2s;}
+        button:hover{background:var(--button-hover);}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>👔 Boss Phrase Generator</h1>
+        <div id="phrase" class="phrase"></div>
+        <div>
+            <button id="generate">New Phrase</button>
+            <button id="copy">Copy</button>
+        </div>
+    </div>
+    <script>
+        const phrases = [
+            "Let’s circle back on that offline.",
+            "We need to think outside the box.",
+            "Time is money, so let’s table this.",
+            "It’s not about winning, it’s about not losing.",
+            "Let’s leverage synergies.",
+            "Move the needle.",
+            "Can you run it up the flagpole?",
+            "We have to manage expectations.",
+            "Low-hanging fruit is priority.",
+            "I don’t want to boil the ocean."
+        ];
+        const phraseEl = document.getElementById('phrase');
+        const genBtn = document.getElementById('generate');
+        const copyBtn = document.getElementById('copy');
+        let current = '';
+        function rand(arr){return arr[Math.floor(Math.random()*arr.length)];}
+        function animateText(el,text){
+            el.textContent='';
+            el.classList.add('typed');
+            let i=0;
+            const step=()=>{
+                if(i<text.length){
+                    el.textContent+=text.charAt(i);
+                    i++;
+                    setTimeout(step,50);
+                } else {
+                    el.classList.remove('typed');
+                }
+            };
+            step();
+        }
+        function generate(){
+            current = rand(phrases);
+            animateText(phraseEl, current);
+        }
+        genBtn.addEventListener('click',generate);
+        copyBtn.addEventListener('click',()=>{
+            if(!current)return;
+            navigator.clipboard.writeText(current).then(()=>{
+                copyBtn.textContent='Copied!';
+                setTimeout(()=>copyBtn.textContent='Copy',1200);
+            });
+        });
+        generate();
+    </script>
+</body>
+</html>
