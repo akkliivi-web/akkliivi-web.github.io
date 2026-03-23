@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="et">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cursor Trail</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --text: #dce7ff;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: radial-gradient(circle at 30% 20%, #1a2450 0%, var(--bg) 55%);
+      color: var(--text);
+      font-family: Arial, Helvetica, sans-serif;
+      cursor: crosshair;
+    }
+
+    .hint {
+      position: fixed;
+      inset: auto 0 24px 0;
+      text-align: center;
+      font-size: 14px;
+      letter-spacing: 0.3px;
+      opacity: 0.8;
+      user-select: none;
+      pointer-events: none;
+    }
+
+    .spark {
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: 14px;
+      height: 14px;
+      pointer-events: none;
+      transform: translate(-50%, -50%);
+      will-change: transform, opacity;
+      animation: fadeOut 720ms ease-out forwards;
+      filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.4));
+    }
+
+    .spark.circle {
+      border-radius: 50%;
+      background: hsl(var(--hue), 95%, 66%);
+    }
+
+    .spark.square {
+      background: hsl(var(--hue), 95%, 66%);
+      transform: translate(-50%, -50%) rotate(22deg);
+    }
+
+    .spark.triangle {
+      width: 0;
+      height: 0;
+      border-left: 8px solid transparent;
+      border-right: 8px solid transparent;
+      border-bottom: 14px solid hsl(var(--hue), 95%, 66%);
+      background: transparent;
+    }
+
+    @keyframes fadeOut {
+      0% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.25) rotate(60deg);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="hint">Liiguta hiirt – kursori taha jäävad sädemed</div>
+
+  <script>
+    const SHAPES = ["circle", "square", "triangle"];
+
+    function random(min, max) {
+      return Math.random() * (max - min) + min;
+    }
+
+    function createSpark(x, y) {
+      const spark = document.createElement("div");
+      const shape = SHAPES[Math.floor(Math.random() * SHAPES.length)];
+      const hue = Math.floor(random(180, 320));
+      const dx = `${Math.round(random(-24, 24))}px`;
+      const dy = `${Math.round(random(-24, 24))}px`;
+      const size = `${Math.round(random(8, 16))}px`;
+
+      spark.className = `spark ${shape}`;
+      spark.style.left = `${x}px`;
+      spark.style.top = `${y}px`;
+      spark.style.setProperty("--hue", hue);
+      spark.style.setProperty("--dx", dx);
+      spark.style.setProperty("--dy", dy);
+
+      if (shape !== "triangle") {
+        spark.style.width = size;
+        spark.style.height = size;
+      }
+
+      document.body.appendChild(spark);
+      spark.addEventListener("animationend", () => spark.remove(), { once: true });
+    }
+
+    let throttle = false;
+
+    window.addEventListener("mousemove", (event) => {
+      if (throttle) return;
+      throttle = true;
+
+      createSpark(event.clientX, event.clientY);
+      createSpark(event.clientX + random(-6, 6), event.clientY + random(-6, 6));
+
+      requestAnimationFrame(() => {
+        throttle = false;
+      });
+    });
+
+    window.addEventListener("touchmove", (event) => {
+      const touch = event.touches[0];
+      if (!touch) return;
+      createSpark(touch.clientX, touch.clientY);
+    }, { passive: true });
+  </script>
+</body>
+</html>

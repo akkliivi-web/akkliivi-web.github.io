@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="et">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hover-Glitch Effect</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      width: 100%;
+      min-height: 100%;
+      font-family: Arial, Helvetica, sans-serif;
+      background: radial-gradient(circle at 20% 10%, #1f2a44, #0b1120 60%);
+      color: #e2e8f0;
+    }
+
+    body {
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+
+    .wrapper {
+      width: min(860px, 100%);
+      text-align: center;
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: clamp(30px, 4vw, 46px);
+    }
+
+    p {
+      margin: 0 0 26px;
+      opacity: 0.92;
+      font-size: 16px;
+      line-height: 1.45;
+    }
+
+    .glitch-card {
+      position: relative;
+      width: min(700px, 100%);
+      margin: 0 auto;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 16px 34px rgba(0, 0, 0, 0.38);
+      isolation: isolate;
+      cursor: pointer;
+    }
+
+    .main-image {
+      display: block;
+      width: 100%;
+      height: auto;
+      transform: translate3d(0, 0, 0);
+      transition: transform 120ms ease;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+
+    .glitch-layer {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      mix-blend-mode: screen;
+      opacity: 0;
+      pointer-events: none;
+      transform: translate3d(0, 0, 0);
+    }
+
+    .glitch-card.active .main-image {
+      animation: shake 160ms steps(2, end) infinite;
+      filter: saturate(1.25) contrast(1.1);
+    }
+
+    .glitch-card.active .layer-red {
+      opacity: 0.46;
+      filter: grayscale(1) sepia(1) hue-rotate(-30deg) saturate(8);
+      animation: redShift 160ms steps(2, end) infinite;
+    }
+
+    .glitch-card.active .layer-cyan {
+      opacity: 0.42;
+      filter: grayscale(1) sepia(1) hue-rotate(160deg) saturate(8);
+      animation: cyanShift 140ms steps(2, end) infinite;
+    }
+
+    .label {
+      margin-top: 14px;
+      font-size: 14px;
+      opacity: 0.82;
+    }
+
+    @keyframes shake {
+      0%   { transform: translate3d(0, 0, 0); }
+      25%  { transform: translate3d(1px, -1px, 0); }
+      50%  { transform: translate3d(-1px, 1px, 0); }
+      75%  { transform: translate3d(1px, 1px, 0); }
+      100% { transform: translate3d(0, 0, 0); }
+    }
+
+    @keyframes redShift {
+      0%   { transform: translate3d(0, 0, 0); clip-path: inset(0 0 0 0); }
+      50%  { transform: translate3d(4px, -1px, 0); clip-path: inset(2% 0 5% 0); }
+      100% { transform: translate3d(-2px, 1px, 0); clip-path: inset(6% 0 1% 0); }
+    }
+
+    @keyframes cyanShift {
+      0%   { transform: translate3d(0, 0, 0); clip-path: inset(0 0 0 0); }
+      40%  { transform: translate3d(-4px, 1px, 0); clip-path: inset(4% 0 3% 0); }
+      100% { transform: translate3d(2px, -1px, 0); clip-path: inset(1% 0 6% 0); }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrapper">
+    <h1>Hover-Glitch Effect</h1>
+    <p>Kui osutad hiirega pildile, tekib kerge värin ja RGB-värvinihe (glitch).</p>
+
+    <figure class="glitch-card" id="glitchCard" aria-label="Glitch pilt">
+      <img
+        class="main-image"
+        src="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1400' height='840' viewBox='0 0 1400 840'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%2317c3ff'/%3E%3Cstop offset='52%25' stop-color='%238e6bff'/%3E%3Cstop offset='100%25' stop-color='%23ff5cc8'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='1400' height='840' fill='url(%23g)'/%3E%3Ccircle cx='250' cy='220' r='170' fill='rgba(255,255,255,0.18)'/%3E%3Ccircle cx='1120' cy='620' r='210' fill='rgba(255,255,255,0.12)'/%3E%3Ctext x='700' y='390' font-size='118' text-anchor='middle' fill='white' font-family='Arial,Helvetica,sans-serif' font-weight='700'%3EGLITCH DEMO%3C/text%3E%3Ctext x='700' y='480' font-size='40' text-anchor='middle' fill='rgba(255,255,255,0.9)' font-family='Arial,Helvetica,sans-serif'%3EHover me%3C/text%3E%3C/svg%3E"
+        alt="Glitch demo pilt"
+      />
+      <img
+        class="glitch-layer layer-red"
+        src="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1400' height='840' viewBox='0 0 1400 840'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%2317c3ff'/%3E%3Cstop offset='52%25' stop-color='%238e6bff'/%3E%3Cstop offset='100%25' stop-color='%23ff5cc8'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='1400' height='840' fill='url(%23g)'/%3E%3Ccircle cx='250' cy='220' r='170' fill='rgba(255,255,255,0.18)'/%3E%3Ccircle cx='1120' cy='620' r='210' fill='rgba(255,255,255,0.12)'/%3E%3Ctext x='700' y='390' font-size='118' text-anchor='middle' fill='white' font-family='Arial,Helvetica,sans-serif' font-weight='700'%3EGLITCH DEMO%3C/text%3E%3Ctext x='700' y='480' font-size='40' text-anchor='middle' fill='rgba(255,255,255,0.9)' font-family='Arial,Helvetica,sans-serif'%3EHover me%3C/text%3E%3C/svg%3E"
+        alt=""
+        aria-hidden="true"
+      />
+      <img
+        class="glitch-layer layer-cyan"
+        src="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1400' height='840' viewBox='0 0 1400 840'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%2317c3ff'/%3E%3Cstop offset='52%25' stop-color='%238e6bff'/%3E%3Cstop offset='100%25' stop-color='%23ff5cc8'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='1400' height='840' fill='url(%23g)'/%3E%3Ccircle cx='250' cy='220' r='170' fill='rgba(255,255,255,0.18)'/%3E%3Ccircle cx='1120' cy='620' r='210' fill='rgba(255,255,255,0.12)'/%3E%3Ctext x='700' y='390' font-size='118' text-anchor='middle' fill='white' font-family='Arial,Helvetica,sans-serif' font-weight='700'%3EGLITCH DEMO%3C/text%3E%3Ctext x='700' y='480' font-size='40' text-anchor='middle' fill='rgba(255,255,255,0.9)' font-family='Arial,Helvetica,sans-serif'%3EHover me%3C/text%3E%3C/svg%3E"
+        alt=""
+        aria-hidden="true"
+      />
+    </figure>
+
+    <div class="label">Liiguta hiir pildi peale.</div>
+  </main>
+
+  <script>
+    function bindHoverGlitch(cardElement) {
+      function enableGlitch() {
+        cardElement.classList.add('active');
+      }
+
+      function disableGlitch() {
+        cardElement.classList.remove('active');
+      }
+
+      cardElement.addEventListener('mouseenter', enableGlitch);
+      cardElement.addEventListener('mouseleave', disableGlitch);
+      cardElement.addEventListener('touchstart', enableGlitch, { passive: true });
+      cardElement.addEventListener('touchend', disableGlitch);
+    }
+
+    const glitchCard = document.getElementById('glitchCard');
+    bindHoverGlitch(glitchCard);
+  </script>
+</body>
+</html>

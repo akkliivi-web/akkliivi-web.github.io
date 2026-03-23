@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="et">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Eraser Mode</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+    }
+
+    html,
+    body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: Arial, Helvetica, sans-serif;
+      background: radial-gradient(circle at 30% 25%, #22355f, #0b1220 65%);
+      cursor: crosshair;
+    }
+
+    .background-layer {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      background: 
+        repeating-linear-gradient(
+          45deg,
+          #1a2e50,
+          #1a2e50 20px,
+          #0f1f3a 20px,
+          #0f1f3a 40px
+        );
+      display: grid;
+      place-items: center;
+      color: #e2e8f0;
+      font-size: 24px;
+      font-weight: 700;
+      opacity: 1;
+      z-index: 1;
+    }
+
+    .grid-text {
+      text-align: center;
+      opacity: 0.5;
+      letter-spacing: 1px;
+    }
+
+    .eraser-layer {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .erasable {
+      position: absolute;
+      width: 100vw;
+      height: 100vh;
+      opacity: 1;
+      transition: opacity 60ms linear;
+      will-change: opacity;
+    }
+
+    .color-1 { background: linear-gradient(135deg, #38bdf8, #0ea5e9); }
+    .color-2 { background: linear-gradient(135deg, #f472b6, #ec4899); }
+    .color-3 { background: linear-gradient(135deg, #34d399, #10b981); }
+    .color-4 { background: linear-gradient(135deg, #fbbf24, #f59e0b); }
+
+    .hud {
+      position: fixed;
+      top: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-size: 14px;
+      line-height: 1.35;
+      color: #e2e8f0;
+      pointer-events: none;
+      backdrop-filter: blur(3px);
+      z-index: 50;
+    }
+
+    .hint {
+      position: fixed;
+      bottom: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-size: 14px;
+      text-align: center;
+      color: #e2e8f0;
+      pointer-events: none;
+      backdrop-filter: blur(3px);
+      z-index: 50;
+    }
+  </style>
+</head>
+<body>
+  <div class="background-layer">
+    <div class="grid-text">
+      <div>BACKGROUND LAYER</div>
+      <div style="font-size: 16px; opacity: 0.6; margin-top: 10px;">Varjatud tausta avamiseks lohista hiirt üle.</div>
+    </div>
+  </div>
+
+  <div class="eraser-layer" id="eraserLayer">
+    <div class="erasable color-1" id="erase1"></div>
+    <div class="erasable color-2" id="erase2"></div>
+    <div class="erasable color-3" id="erase3"></div>
+    <div class="erasable color-4" id="erase4"></div>
+  </div>
+
+  <div class="hud">Eraser Mode<br>Liiguta hiirt "kustutamiseks".</div>
+  <div class="hint">Hiirekursor on kustutuskumm — liiguta seda üle elementide.</div>
+
+  <script>
+    const erasableElements = document.querySelectorAll('.erasable');
+    const eraserRadius = 180;
+
+    let lastX = window.innerWidth / 2;
+    let lastY = window.innerHeight / 2;
+
+    function updateEraserEffect(mouseX, mouseY) {
+      lastX = mouseX;
+      lastY = mouseY;
+
+      erasableElements.forEach((element) => {
+        const rect = element.getBoundingClientRect();
+        const elementCenterX = rect.left + rect.width / 2;
+        const elementCenterY = rect.top + rect.height / 2;
+
+        const distance = Math.hypot(mouseX - elementCenterX, mouseY - elementCenterY);
+
+        let opacity = 1;
+        if (distance < eraserRadius) {
+          opacity = Math.max(0, 1 - (eraserRadius - distance) / eraserRadius);
+        }
+
+        element.style.opacity = opacity.toFixed(3);
+      });
+    }
+
+    window.addEventListener('mousemove', (event) => {
+      updateEraserEffect(event.clientX, event.clientY);
+    });
+
+    window.addEventListener('touchmove', (event) => {
+      const touch = event.touches[0];
+      if (!touch) return;
+      updateEraserEffect(touch.clientX, touch.clientY);
+    }, { passive: true });
+
+    window.addEventListener('mouseleave', () => {
+      erasableElements.forEach((element) => {
+        element.style.opacity = '1';
+      });
+    });
+
+    updateEraserEffect(lastX, lastY);
+  </script>
+</body>
+</html>

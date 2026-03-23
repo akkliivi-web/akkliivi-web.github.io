@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="et">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Key-Sound Piano</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      width: 100%;
+      min-height: 100%;
+      font-family: Arial, Helvetica, sans-serif;
+      background: radial-gradient(circle at 20% 15%, #1f2f55, #0b1220 62%);
+      color: #e2e8f0;
+    }
+
+    body {
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+
+    .card {
+      width: min(900px, 100%);
+      text-align: center;
+      background: rgba(15, 23, 42, 0.5);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      border-radius: 18px;
+      padding: 28px;
+      backdrop-filter: blur(3px);
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: clamp(30px, 4vw, 48px);
+    }
+
+    p {
+      margin: 0 0 16px;
+      opacity: 0.9;
+      line-height: 1.45;
+      font-size: 16px;
+    }
+
+    .input-box {
+      width: 100%;
+      min-height: 140px;
+      resize: vertical;
+      border-radius: 12px;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      background: rgba(15, 23, 42, 0.72);
+      color: #f8fafc;
+      padding: 14px;
+      font-size: 17px;
+      outline: none;
+      font-family: monospace;
+    }
+
+    .input-box:focus {
+      border-color: rgba(168, 139, 250, 0.8);
+      box-shadow: 0 0 0 3px rgba(168, 139, 250, 0.2);
+    }
+
+    .hint {
+      margin-top: 14px;
+      font-size: 14px;
+      opacity: 0.8;
+    }
+
+    .sound-indicator {
+      margin-top: 12px;
+      height: 4px;
+      border-radius: 2px;
+      background: rgba(148, 163, 184, 0.25);
+      overflow: hidden;
+    }
+
+    .sound-bar {
+      height: 100%;
+      width: 0;
+      background: linear-gradient(90deg, #38bdf8, #a78bfa, #f472b6);
+      transition: width 120ms ease-out;
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>Key-Sound Piano</h1>
+    <p>Kirjuta teksti allpool. Iga klahvivajutus tekitab juhusliku lühikese heli — alates bittidest kuni multika-piu helideni.</p>
+
+    <textarea id="pianoInput" class="input-box" placeholder="Klõpsa siia ja alusta klahvi vajutamist..." autofocus></textarea>
+
+    <div class="sound-indicator">
+      <div class="sound-bar" id="soundBar"></div>
+    </div>
+
+    <div class="hint">Heli sisemine — sinu klahvi võngad = muusika! 🎹</div>
+  </main>
+
+  <script>
+    let audioContext;
+
+    function initAudioContext() {
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+
+    function playKeySound(charCode) {
+      initAudioContext();
+
+      const now = audioContext.currentTime;
+      const duration = 0.08 + Math.random() * 0.12;
+
+      const baseFreq = 200 + (charCode % 26) * 35;
+      const frequency = baseFreq + Math.random() * 80;
+      const waveType = ['sine', 'square', 'triangle', 'sawtooth'][Math.floor(Math.random() * 4)];
+
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      const filter = audioContext.createBiquadFilter();
+
+      osc.type = waveType;
+      osc.frequency.setValueAtTime(frequency, now);
+      osc.frequency.exponentialRampToValueAtTime(frequency * 0.3, now + duration);
+
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(frequency * 2, now);
+      filter.frequency.exponentialRampToValueAtTime(400, now + duration);
+
+      gain.gain.setValueAtTime(0.12, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(audioContext.destination);
+
+      osc.start(now);
+      osc.stop(now + duration);
+
+      showSoundFeedback();
+    }
+
+    function showSoundFeedback() {
+      const soundBar = document.getElementById('soundBar');
+      soundBar.style.width = '100%';
+      setTimeout(() => {
+        soundBar.style.width = '0%';
+      }, 150);
+    }
+
+    const pianoInput = document.getElementById('pianoInput');
+
+    pianoInput.addEventListener('keydown', (event) => {
+      playKeySound(event.key.charCodeAt(0) || event.keyCode);
+    });
+
+    pianoInput.addEventListener('keypress', (event) => {
+      playKeySound(event.charCode || event.keyCode);
+    });
+  </script>
+</body>
+</html>

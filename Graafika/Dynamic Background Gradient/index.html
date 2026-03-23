@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="et">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dynamic Background Gradient</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    body {
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      transition: background 120ms linear;
+      background: radial-gradient(circle at 50% 50%, hsl(200 90% 65%), hsl(260 80% 35%));
+      color: white;
+    }
+
+    .card {
+      text-align: center;
+      padding: 28px 34px;
+      border-radius: 16px;
+      background: rgba(0, 0, 0, 0.28);
+      backdrop-filter: blur(4px);
+      max-width: 720px;
+      margin: 20px;
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: clamp(28px, 4vw, 42px);
+    }
+
+    p {
+      margin: 0;
+      opacity: 0.92;
+      font-size: 16px;
+      line-height: 1.45;
+    }
+  </style>
+</head>
+<body>
+  <section class="card">
+    <h1>Dynamic Background Gradient</h1>
+    <p>
+      Liiguta hiirt ekraanil. Tausta gradient muutub sujuvalt sõltuvalt sellest,
+      millises nurgas hiir asub.
+    </p>
+  </section>
+
+  <script>
+    function updateDynamicGradient(mouseX, mouseY) {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+
+      const normX = Math.min(Math.max(mouseX / width, 0), 1);
+      const normY = Math.min(Math.max(mouseY / height, 0), 1);
+
+      const posX = Math.round(normX * 100);
+      const posY = Math.round(normY * 100);
+
+      const hueA = Math.round(180 + normX * 120);
+      const hueB = Math.round(280 + normY * 80);
+      const hueC = Math.round(330 - normX * 70 + normY * 40);
+
+      document.body.style.background = `radial-gradient(circle at ${posX}% ${posY}%, hsl(${hueA} 92% 66%), hsl(${hueB} 78% 40%), hsl(${hueC} 72% 28%))`;
+    }
+
+    window.addEventListener("mousemove", (event) => {
+      updateDynamicGradient(event.clientX, event.clientY);
+    });
+
+    window.addEventListener("touchmove", (event) => {
+      const touch = event.touches[0];
+      if (!touch) return;
+      updateDynamicGradient(touch.clientX, touch.clientY);
+    }, { passive: true });
+
+    updateDynamicGradient(window.innerWidth / 2, window.innerHeight / 2);
+  </script>
+</body>
+</html>

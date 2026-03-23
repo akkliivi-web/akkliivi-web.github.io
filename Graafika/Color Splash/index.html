@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="et">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Color Splash</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+    }
+
+    html,
+    body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: Arial, Helvetica, sans-serif;
+      background: radial-gradient(circle at 25% 20%, #1e293b, #0b1220 65%);
+      color: #e2e8f0;
+    }
+
+    body {
+      position: relative;
+      cursor: crosshair;
+    }
+
+    .hud {
+      position: fixed;
+      left: 50%;
+      top: 18px;
+      transform: translateX(-50%);
+      background: rgba(15, 23, 42, 0.5);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-size: 14px;
+      text-align: center;
+      line-height: 1.35;
+      pointer-events: none;
+      backdrop-filter: blur(2px);
+    }
+
+    .splash {
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: 24px;
+      height: 24px;
+      transform: translate(-50%, -50%) scale(var(--scale, 1));
+      border-radius: 50%;
+      pointer-events: none;
+      opacity: 0.85;
+      mix-blend-mode: screen;
+      background: radial-gradient(circle, hsla(var(--hue), 95%, 68%, 0.95) 0%, hsla(var(--hue), 95%, 58%, 0.45) 38%, hsla(var(--hue), 95%, 52%, 0.05) 70%, transparent 100%);
+      filter: blur(0.3px) drop-shadow(0 0 18px hsla(var(--hue), 95%, 62%, 0.7));
+      will-change: transform, opacity;
+    }
+
+    .splash.release {
+      animation: fadeOut 280ms ease forwards;
+    }
+
+    @keyframes fadeOut {
+      from {
+        opacity: 0.85;
+      }
+      to {
+        opacity: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="hud">Color Splash<br>Hoia hiirenuppu all, et laik kasvaks. Vabastamisel kasv peatub.</div>
+
+  <script>
+    let activeSplash = null;
+    let growthRaf = 0;
+    let splashScale = 1;
+    let isHolding = false;
+
+    function createSplash(x, y) {
+      const splash = document.createElement('div');
+      const hue = Math.floor(Math.random() * 360);
+      splash.className = 'splash';
+      splash.style.left = `${x}px`;
+      splash.style.top = `${y}px`;
+      splash.style.setProperty('--hue', String(hue));
+      splash.style.setProperty('--scale', '1');
+      document.body.appendChild(splash);
+      return splash;
+    }
+
+    function growSplash() {
+      if (!isHolding || !activeSplash) {
+        return;
+      }
+
+      splashScale = Math.min(splashScale + 0.08, 16);
+      activeSplash.style.setProperty('--scale', splashScale.toFixed(2));
+      growthRaf = requestAnimationFrame(growSplash);
+    }
+
+    function startSplash(x, y) {
+      stopSplashGrowth();
+      activeSplash = createSplash(x, y);
+      splashScale = 1;
+      isHolding = true;
+      growSplash();
+    }
+
+    function stopSplashGrowth() {
+      if (growthRaf) {
+        cancelAnimationFrame(growthRaf);
+        growthRaf = 0;
+      }
+    }
+
+    function releaseSplash() {
+      if (!isHolding) {
+        return;
+      }
+
+      isHolding = false;
+      stopSplashGrowth();
+
+      if (activeSplash) {
+        activeSplash.classList.add('release');
+        const splashToRemove = activeSplash;
+        splashToRemove.addEventListener('animationend', () => {
+          splashToRemove.remove();
+        }, { once: true });
+        activeSplash = null;
+      }
+    }
+
+    window.addEventListener('mousedown', (event) => {
+      startSplash(event.clientX, event.clientY);
+    });
+
+    window.addEventListener('mouseup', releaseSplash);
+    window.addEventListener('mouseleave', releaseSplash);
+
+    window.addEventListener('touchstart', (event) => {
+      const touch = event.touches[0];
+      if (!touch) return;
+      startSplash(touch.clientX, touch.clientY);
+    }, { passive: true });
+
+    window.addEventListener('touchend', releaseSplash);
+    window.addEventListener('touchcancel', releaseSplash);
+  </script>
+</body>
+</html>

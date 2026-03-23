@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="et">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Custom Cursor Shape</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      cursor: none;
+    }
+
+    html,
+    body {
+      margin: 0;
+      width: 100%;
+      min-height: 100%;
+      font-family: Arial, Helvetica, sans-serif;
+      background: radial-gradient(circle at 15% 15%, #1f2f55, #0b1220 62%);
+      color: #e2e8f0;
+    }
+
+    body {
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      overflow: hidden;
+    }
+
+    .panel {
+      text-align: center;
+      max-width: 760px;
+      background: rgba(15, 23, 42, 0.45);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      border-radius: 18px;
+      padding: 28px;
+      backdrop-filter: blur(3px);
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: clamp(30px, 4vw, 48px);
+    }
+
+    p {
+      margin: 0;
+      line-height: 1.5;
+      opacity: 0.92;
+      font-size: 16px;
+    }
+
+    .cursor {
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: 34px;
+      height: 34px;
+      pointer-events: none;
+      transform: translate(-50%, -50%);
+      z-index: 9999;
+      will-change: transform;
+      filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.55));
+    }
+
+    .cursor::before,
+    .cursor::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 8px;
+      border: 2px solid #67e8f9;
+    }
+
+    .cursor::before {
+      transform: rotate(0deg);
+      opacity: 0.95;
+    }
+
+    .cursor::after {
+      transform: rotate(45deg) scale(0.72);
+      border-color: #a78bfa;
+      opacity: 0.85;
+    }
+
+    .dot {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 6px;
+      height: 6px;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      background: #f8fafc;
+      box-shadow: 0 0 8px rgba(248, 250, 252, 0.8);
+    }
+
+    .hint {
+      margin-top: 18px;
+      font-size: 14px;
+      opacity: 0.8;
+    }
+  </style>
+</head>
+<body>
+  <main class="panel">
+    <h1>Custom Cursor Shape</h1>
+    <p>Tavaline hiirekursor on peidetud ja asendatud graafilise objektiga, mis pöörleb liikumisel.</p>
+    <div class="hint">Liiguta hiirt kiiremini, et näha tugevamat pöörlemist.</div>
+  </main>
+
+  <div class="cursor" id="customCursor" aria-hidden="true">
+    <span class="dot"></span>
+  </div>
+
+  <script>
+    const cursor = document.getElementById('customCursor');
+
+    let lastX = window.innerWidth / 2;
+    let lastY = window.innerHeight / 2;
+    let rotation = 0;
+
+    function updateCustomCursor(x, y) {
+      const dx = x - lastX;
+      const dy = y - lastY;
+      const speed = Math.hypot(dx, dy);
+      const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+
+      rotation += Math.min(20, speed * 0.7);
+
+      cursor.style.transform = `translate(${x}px, ${y}px) translate(-50%, -50%) rotate(${angle + rotation}deg)`;
+
+      lastX = x;
+      lastY = y;
+    }
+
+    window.addEventListener('mousemove', (event) => {
+      updateCustomCursor(event.clientX, event.clientY);
+    });
+
+    window.addEventListener('mouseleave', () => {
+      cursor.style.opacity = '0';
+    });
+
+    window.addEventListener('mouseenter', () => {
+      cursor.style.opacity = '1';
+    });
+
+    updateCustomCursor(lastX, lastY);
+  </script>
+</body>
+</html>

@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="et">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Browser Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #1a1a1a;
+            font-family: Arial, sans-serif;
+        }
+
+        canvas {
+            border: 2px solid #333;
+            background-color: #0a0a0a;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <script>
+        // ===== CONSTANTS =====
+        const CANVAS_WIDTH = 800;
+        const CANVAS_HEIGHT = 600;
+        const PLAYER_SIZE = 20;
+        const PLAYER_COLOR = '#00ff00';
+        const PLAYER_SPEED = 300; // pixels per second
+        const ENEMY_RADIUS = 10;
+        const ENEMY_COLOR = '#ff0000';
+        const SCORE_PER_SECOND = 1;
+        const STORAGE_KEY = 'canvas_apocalypse_highscore';
+
+        // ===== DIFFICULTY PRESETS =====
+        const DIFFICULTY_PRESETS = {
+            easy: {
+                name: 'Easy',
+                enemySpeed: 100,
+                spawnInterval: 4,
+                difficultyRampTime: 60
+            },
+            medium: {
+                name: 'Medium',
+                enemySpeed: 150,
+                spawnInterval: 3,
+                difficultyRampTime: 30
+            },
+            hard: {
+                name: 'Hard',
+                enemySpeed: 200,
+                spawnInterval: 2,
+                difficultyRampTime: 15
+            }
+        };
+
+        // ===== STATE OBJECT =====
+        const gameState = {
+            state: 'MENU', // MENU, PLAY, GAME_OVER
+            player: {
+                x: CANVAS_WIDTH / 2 - PLAYER_SIZE / 2,
+                y: CANVAS_HEIGHT / 2 - PLAYER_SIZE / 2,
+                width: PLAYER_SIZE,
+                height: PLAYER_SIZE
+            },
+            enemies: [],
+            particles: [],
+            timeSurvived: 0,
+            spawnTimer: 0,
+            score: 0,
+            highScore: 0,
+            // Difficulty settings (set on difficulty selection)
+            currentDifficulty: null,
+            currentEnemySpeed: 0,
+            currentSpawnInterval: 0,
+            currentDifficultyRampTime: 0,
+            // Screen shake
+            shakeIntensity: 0,
+            shakeDuration: 0
+        };
+
+        // ===== KEYBOARD STATE =====
+        const keysPressed = {
+            w: false,
+            a: false,
+            s: false,
+            d: false,
+            arrowUp: false,
+            arrowLeft: false,
+            arrowDown: false,
+            arrowRight: false
+        };
+
+        // ===== GET CANVAS & CONTEXT =====
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // ===== HIGH SCORE FUNCTIONS =====
+        function loadHighScore() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            return saved ? parseFloat(saved) : 0;
+        }
+
+        function saveHighScore(score) {
+            localStorage.setItem(STORAGE_KEY, score.toString());
+        }
+
+        // Load high score on startup
+        gameState.highScore = loadHighScore();
+
+        // ===== KEYBOARD EVENT LISTENERS =====
+        document.addEventListener('keydown', (e) => {
+            const key = e.key.toLowerCase();
+            if (key === 'w') keysPressed.w = true;
+            if (key === 'a') keysPressed.a = true;
+            if (key === 's') keysPressed.s = true;
+            if (key === 'd') keysPressed.d = true;
+            if (e.key === 'ArrowUp') keysPressed.arrowUp = true;
+            if (e.key === 'ArrowLeft') keysPressed.arrowLeft = true;
+            if (e.key === 'ArrowDown') keysPressed.arrowDown = true;
+            if (e.key === 'ArrowRight') keysPressed.arrowRight = true;
+        });
+
+        document.addEventListener('keyup', (e) => {
+            const key = e.key.toLowerCase();
+            if (key === 'w') keysPressed.w = false;
+            if (key === 'a') keysPressed.a = false;
+            if (key === 's') keysPressed.s = false;
+            if (key === 'd') keysPressed.d = false;
+            if (e.key === 'ArrowUp') keysPressed.arrowUp = false;
+            if (e.key === 'ArrowLeft') keysPressed.arrowLeft = false;
+            if (e.key === 'ArrowDown') keysPressed.arrowDown = false;
+            if (e.key === 'ArrowRight') keysPressed.arrowRight = false;
+        });
+
+        document.addEventListener('keydown', (e) => {
+            const key = e.key.toLowerCase();
+            if (key === 'r' && gameState.state === 'GAME_OVER') {
+                restartGame();
+            }
+            // Difficulty selection (1/2/3) from menu
+            if (gameState.state === 'MENU') {
+                if (key === '1') selectDifficulty('easy');
+                if (key === '2') selectDifficulty('medium');
+                if (key === '3') selectDifficulty('hard');
+            }
+        });
+
+        // ===== DIFFICULTY SELECTION FUNCTION =====
+        function selectDifficulty(difficulty) {
+            const preset = DIFFICULTY_PRESETS[difficulty];
+            gameState.currentDifficulty = difficulty;
+            gameState.currentEnemySpeed = preset.enemySpeed;
+            gameState.currentSpawnInterval = preset.spawnInterval;
+            gameState.currentDifficultyRampTime = preset.difficultyRampTime;
+
+            // Reset game state for play
+            gameState.player.x = CANVAS_WIDTH / 2 - PLAYER_SIZE / 2;
+            gameState.player.y = CANVAS_HEIGHT / 2 - PLAYER_SIZE / 2;
+            gameState.enemies = [];
+            gameState.particles = [];
+            gameState.timeSurvived = 0;
+            gameState.spawnTimer = 0;
+            gameState.score = 0;
+            gameState.shakeIntensity = 0;
+            gameState.shakeDuration = 0;
+            gameState.state = 'PLAY';
+
+            spawnEnemy();
+        }
+
+        // ===== ENEMY SPAWN FUNCTION =====
+        function spawnEnemy() {
+            const edge = Math.floor(Math.random() * 4); // 0: top, 1: right, 2: bottom, 3: left
+            let x, y;
+
+            switch (edge) {
+                case 0: // top
+                    x = Math.random() * CANVAS_WIDTH;
+                    y = -ENEMY_RADIUS;
+                    break;
+                case 1: // right
+                    x = CANVAS_WIDTH + ENEMY_RADIUS;
+                    y = Math.random() * CANVAS_HEIGHT;
+                    break;
+                case 2: // bottom
+                    x = Math.random() * CANVAS_WIDTH;
+                    y = CANVAS_HEIGHT + ENEMY_RADIUS;
+                    break;
+                case 3: // left
+                    x = -ENEMY_RADIUS;
+                    y = Math.random() * CANVAS_HEIGHT;
+                    break;
+            }
+
+            // Add new enemy to array
+            gameState.enemies.push({
+                x: x,
+                y: y,
+                radius: ENEMY_RADIUS
+            });
+        }
+
+        // ===== PARTICLE EXPLOSION FUNCTION =====
+        function spawnExplosion(x, y) {
+            const particleCount = 30;
+            for (let i = 0; i < particleCount; i++) {
+                const angle = (Math.PI * 2 * i) / particleCount + (Math.random() - 0.5);
+                const speed = 100 + Math.random() * 200;
+
+                gameState.particles.push({
+                    x: x,
+                    y: y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    life: 1.0, // 0 to 1
+                    size: 3 + Math.random() * 4
+                });
+            }
+        }
+
+        // ===== TRIGGER SCREEN SHAKE =====
+        function triggerScreenShake(intensity = 8, duration = 0.2) {
+            gameState.shakeIntensity = intensity;
+            gameState.shakeDuration = duration;
+        }
+
+        // ===== COLLISION DETECTION: Circle vs Rectangle =====
+        function checkCollision() {
+            // Check collision against all enemies
+            for (let i = 0; i < gameState.enemies.length; i++) {
+                const enemy = gameState.enemies[i];
+
+                // Find the closest point on the player rectangle to the enemy circle center
+                const closestX = Math.max(
+                    gameState.player.x,
+                    Math.min(enemy.x, gameState.player.x + gameState.player.width)
+                );
+                const closestY = Math.max(
+                    gameState.player.y,
+                    Math.min(enemy.y, gameState.player.y + gameState.player.height)
+                );
+
+                // Calculate distance between circle center and closest point on rectangle
+                const distanceX = enemy.x - closestX;
+                const distanceY = enemy.y - closestY;
+                const distance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
+
+                // Collision occurs if distance is less than circle radius
+                if (distance < enemy.radius) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // ===== RESTART FUNCTION =====
+        function restartGame() {
+            gameState.state = 'MENU';
+            gameState.currentDifficulty = null;
+            gameState.currentEnemySpeed = 0;
+            gameState.currentSpawnInterval = 0;
+            gameState.currentDifficultyRampTime = 0;
+            // Reload high score from localStorage
+            gameState.highScore = loadHighScore();
+        }
+
+        // ===== UPDATE FUNCTION =====
+        function update(deltaTime) {
+            // Only update during PLAY state
+            if (gameState.state !== 'PLAY') return;
+
+            // Update screen shake
+            if (gameState.shakeDuration > 0) {
+                gameState.shakeDuration -= deltaTime;
+            } else {
+                gameState.shakeIntensity = 0;
+            }
+
+            // Update particles
+            for (let i = gameState.particles.length - 1; i >= 0; i--) {
+                const particle = gameState.particles[i];
+                particle.x += particle.vx * deltaTime;
+                particle.y += particle.vy * deltaTime;
+                particle.vy += 300 * deltaTime; // gravity
+                particle.life -= deltaTime * 5; // fade out over ~0.2 seconds
+
+                if (particle.life <= 0) {
+                    gameState.particles.splice(i, 1);
+                }
+            }
+
+            // Update survival timer and score
+            gameState.timeSurvived += deltaTime;
+            gameState.score += deltaTime * SCORE_PER_SECOND;
+
+            // Calculate difficulty multiplier (increases over time)
+            const difficultyMultiplier = 1 + (gameState.timeSurvived / gameState.currentDifficultyRampTime);
+
+            // Update spawn timer and spawn new enemies
+            gameState.spawnTimer += deltaTime;
+            if (gameState.spawnTimer >= gameState.currentSpawnInterval) {
+                spawnEnemy();
+                gameState.spawnTimer = 0;
+            }
+
+            // Calculate velocity based on keys pressed
+            let velocityX = 0;
+            let velocityY = 0;
+
+            if (keysPressed.w || keysPressed.arrowUp) velocityY -= PLAYER_SPEED;
+            if (keysPressed.s || keysPressed.arrowDown) velocityY += PLAYER_SPEED;
+            if (keysPressed.a || keysPressed.arrowLeft) velocityX -= PLAYER_SPEED;
+            if (keysPressed.d || keysPressed.arrowRight) velocityX += PLAYER_SPEED;
+
+            // Apply velocity (frame-independent using deltaTime)
+            gameState.player.x += velocityX * deltaTime;
+            gameState.player.y += velocityY * deltaTime;
+
+            // Boundary checking - prevent player from leaving canvas
+            if (gameState.player.x < 0) {
+                gameState.player.x = 0;
+            }
+            if (gameState.player.x + gameState.player.width > CANVAS_WIDTH) {
+                gameState.player.x = CANVAS_WIDTH - gameState.player.width;
+            }
+            if (gameState.player.y < 0) {
+                gameState.player.y = 0;
+            }
+            if (gameState.player.y + gameState.player.height > CANVAS_HEIGHT) {
+                gameState.player.y = CANVAS_HEIGHT - gameState.player.height;
+            }
+
+            // Update all enemies - move toward player
+            const playerCenterX = gameState.player.x + gameState.player.width / 2;
+            const playerCenterY = gameState.player.y + gameState.player.height / 2;
+
+            for (let i = 0; i < gameState.enemies.length; i++) {
+                const enemy = gameState.enemies[i];
+
+                const directionX = playerCenterX - enemy.x;
+                const directionY = playerCenterY - enemy.y;
+                const distance = Math.sqrt(directionX * directionX + directionY * directionY);
+
+                // Normalize vector and apply speed (with difficulty multiplier)
+                if (distance > 0) {
+                    const normalizedX = directionX / distance;
+                    const normalizedY = directionY / distance;
+                    const scaledSpeed = gameState.currentEnemySpeed * difficultyMultiplier;
+                    enemy.x += normalizedX * scaledSpeed * deltaTime;
+                    enemy.y += normalizedY * scaledSpeed * deltaTime;
+                }
+            }
+
+            // Check collision with any enemy
+            if (checkCollision()) {
+                // Trigger visual effects
+                const collisionX = gameState.player.x + gameState.player.width / 2;
+                const collisionY = gameState.player.y + gameState.player.height / 2;
+                spawnExplosion(collisionX, collisionY);
+                triggerScreenShake(12, 0.3);
+
+                gameState.state = 'GAME_OVER';
+                // Update high score if current score is better
+                if (gameState.score > gameState.highScore) {
+                    gameState.highScore = gameState.score;
+                    saveHighScore(gameState.highScore);
+                }
+            }
+        }
+
+        // ===== DRAW FUNCTION =====
+        function draw() {
+            // Clear the canvas
+            ctx.fillStyle = '#0a0a0a';
+            ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+            if (gameState.state === 'MENU') {
+                drawMenu();
+            } else if (gameState.state === 'PLAY' || gameState.state === 'GAME_OVER') {
+                // Draw gameplay with camera shake applied
+                const shakeOffsetX = gameState.shakeIntensity > 0 ? (Math.random() - 0.5) * gameState.shakeIntensity : 0;
+                const shakeOffsetY = gameState.shakeIntensity > 0 ? (Math.random() - 0.5) * gameState.shakeIntensity : 0;
+
+                ctx.save();
+                ctx.translate(shakeOffsetX, shakeOffsetY);
+
+                drawBackground();
+                drawGameplay();
+                drawParticles();
+
+                ctx.restore();
+            }
+        }
+
+        // ===== DRAW BACKGROUND (Drifting dots) =====
+        function drawBackground() {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.03)';
+            const gridSize = 60;
+            const offsetX = (gameState.timeSurvived * 20) % gridSize;
+            const offsetY = (gameState.timeSurvived * 15) % gridSize;
+
+            for (let x = -gridSize + offsetX; x < CANVAS_WIDTH + gridSize; x += gridSize) {
+                for (let y = -gridSize + offsetY; y < CANVAS_HEIGHT + gridSize; y += gridSize) {
+                    ctx.beginPath();
+                    ctx.arc(x, y, 2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+        }
+
+        // ===== DRAW PARTICLES =====
+        function drawParticles() {
+            for (let i = 0; i < gameState.particles.length; i++) {
+                const particle = gameState.particles[i];
+
+                ctx.fillStyle = `rgba(255, 100, 100, ${particle.life * 0.8})`;
+                ctx.beginPath();
+                ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // ===== DRAW MENU =====
+        function drawMenu() {
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 48px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('SURVIVAL GAME', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 - 120);
+
+            ctx.font = '24px Arial';
+            ctx.fillText('Select Difficulty', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 - 40);
+
+            ctx.font = '20px Arial';
+            ctx.fillText('Press 1 - Easy', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 20);
+            ctx.fillText('Press 2 - Medium', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 60);
+            ctx.fillText('Press 3 - Hard', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 100);
+
+            // Display high score at bottom
+            ctx.font = '18px Arial';
+            ctx.fillStyle = '#ffff00';
+            ctx.fillText('High Score: ' + Math.floor(gameState.highScore), CANVAS_WIDTH / 2, CANVAS_HEIGHT - 30);
+        }
+
+        // ===== DRAW GAMEPLAY =====
+        function drawGameplay() {
+            // Draw player (green square)
+            ctx.fillStyle = PLAYER_COLOR;
+            ctx.fillRect(
+                gameState.player.x,
+                gameState.player.y,
+                gameState.player.width,
+                gameState.player.height
+            );
+
+            // Draw all enemies (red circles)
+            ctx.fillStyle = ENEMY_COLOR;
+            for (let i = 0; i < gameState.enemies.length; i++) {
+                const enemy = gameState.enemies[i];
+                ctx.beginPath();
+                ctx.arc(enemy.x, enemy.y, enemy.radius, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Draw UI: Survival Timer and Score
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '20px Arial';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'top';
+            const timeText = 'Time: ' + Math.floor(gameState.timeSurvived) + 's';
+            ctx.fillText(timeText, 15, 15);
+
+            const scoreText = 'Score: ' + Math.floor(gameState.score);
+            ctx.fillText(scoreText, 15, 40);
+
+            // Draw game over screen if applicable
+            if (gameState.state === 'GAME_OVER') {
+                // Semi-transparent overlay
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+                // GAME OVER text
+                ctx.fillStyle = '#ff0000';
+                ctx.font = 'bold 48px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('GAME OVER', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 - 80);
+
+                // Current score
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 32px Arial';
+                ctx.fillText('Score: ' + Math.floor(gameState.score), CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 - 10);
+
+                // High score or new high score message
+                if (gameState.score >= gameState.highScore && gameState.score > 0) {
+                    ctx.fillStyle = '#00ff00';
+                    ctx.font = 'bold 28px Arial';
+                    ctx.fillText('NEW HIGH SCORE!', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 35);
+                } else {
+                    ctx.fillStyle = '#ffff00';
+                    ctx.font = '20px Arial';
+                    ctx.fillText('High Score: ' + Math.floor(gameState.highScore), CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 35);
+                }
+
+                // Restart instructions
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '20px Arial';
+                ctx.fillText('Press R to restart', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 90);
+            }
+        }
+
+        // ===== GAME LOOP =====
+        let lastFrameTime = Date.now();
+
+        function gameLoop() {
+            const currentTime = Date.now();
+            const deltaTime = (currentTime - lastFrameTime) / 1000; // convert to seconds
+            lastFrameTime = currentTime;
+
+            update(deltaTime);
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Start the game loop (starts on menu screen)
+        gameLoop();
+    </script>
+
+</body>
+</html>

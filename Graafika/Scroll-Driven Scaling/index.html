@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="et">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Scroll-Driven Scaling</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+    }
+
+    .hero {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      text-align: center;
+      background: linear-gradient(180deg, #1e293b, #0f172a);
+    }
+
+    .hero h1 {
+      margin: 0 0 10px;
+      font-size: clamp(30px, 5vw, 52px);
+    }
+
+    .hero p {
+      margin: 0;
+      opacity: 0.9;
+      font-size: 17px;
+    }
+
+    .content {
+      min-height: 220vh;
+      padding: 60px 24px 120px;
+      display: flex;
+      align-items: start;
+      justify-content: center;
+    }
+
+    .stage {
+      position: sticky;
+      top: 14vh;
+      width: min(900px, 100%);
+      display: grid;
+      grid-template-columns: repeat(3, minmax(120px, 1fr));
+      gap: 22px;
+    }
+
+    .shape {
+      aspect-ratio: 1;
+      border-radius: 20px;
+      display: grid;
+      place-items: center;
+      font-weight: 700;
+      font-size: clamp(14px, 2vw, 20px);
+      color: #0f172a;
+      transform: scale(var(--scale, 1));
+      transition: transform 140ms linear;
+      box-shadow: 0 10px 24px rgba(2, 6, 23, 0.35);
+      will-change: transform;
+    }
+
+    .shape:nth-child(1) { background: #38bdf8; }
+    .shape:nth-child(2) { background: #f472b6; }
+    .shape:nth-child(3) { background: #34d399; }
+    .shape:nth-child(4) { background: #fbbf24; }
+    .shape:nth-child(5) { background: #c084fc; }
+    .shape:nth-child(6) { background: #fb7185; }
+
+    .footer-space {
+      height: 55vh;
+    }
+  </style>
+</head>
+<body>
+  <section class="hero">
+    <div>
+      <h1>Scroll-Driven Scaling</h1>
+      <p>Mida kaugemale lehte sirvid, seda suuremaks muutuvad all olevad elemendid.</p>
+    </div>
+  </section>
+
+  <section class="content">
+    <div class="stage" id="stage">
+      <div class="shape">Element 1</div>
+      <div class="shape">Element 2</div>
+      <div class="shape">Element 3</div>
+      <div class="shape">Element 4</div>
+      <div class="shape">Element 5</div>
+      <div class="shape">Element 6</div>
+    </div>
+  </section>
+
+  <div class="footer-space"></div>
+
+  <script>
+    function updateScaleByScroll() {
+      const scrollTop = window.scrollY;
+      const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+      const progress = maxScroll > 0 ? scrollTop / maxScroll : 0;
+
+      const shapes = document.querySelectorAll('.shape');
+
+      shapes.forEach((shape, index) => {
+        const base = 0.75;
+        const growth = 0.85;
+        const offset = index * 0.04;
+        const scale = base + Math.min(1, progress + offset) * growth;
+        shape.style.setProperty('--scale', scale.toFixed(3));
+      });
+    }
+
+    window.addEventListener('scroll', updateScaleByScroll, { passive: true });
+    window.addEventListener('resize', updateScaleByScroll);
+    updateScaleByScroll();
+  </script>
+</body>
+</html>

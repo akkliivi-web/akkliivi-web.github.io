@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="et">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Toggle Themes with Sound</title>
+  <style>
+    :root {
+      --bg: #f6f8fc;
+      --panel: #ffffff;
+      --text: #0f172a;
+      --muted: #475569;
+      --btn-bg: #0f172a;
+      --btn-text: #f8fafc;
+      --shadow: 0 14px 30px rgba(15, 23, 42, 0.15);
+    }
+
+    body.dark {
+      --bg: #0b1220;
+      --panel: #141f34;
+      --text: #e2e8f0;
+      --muted: #a8b5cc;
+      --btn-bg: #e2e8f0;
+      --btn-text: #0f172a;
+      --shadow: 0 14px 30px rgba(2, 6, 23, 0.45);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      width: 100%;
+      min-height: 100%;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      transition: background-color 220ms ease, color 220ms ease;
+    }
+
+    body {
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+
+    .card {
+      width: min(560px, 100%);
+      background: var(--panel);
+      border-radius: 18px;
+      padding: 28px;
+      box-shadow: var(--shadow);
+      transition: background-color 220ms ease, box-shadow 220ms ease;
+      text-align: center;
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: clamp(28px, 4vw, 40px);
+    }
+
+    p {
+      margin: 0 0 22px;
+      color: var(--muted);
+      transition: color 220ms ease;
+      line-height: 1.5;
+    }
+
+    .toggle-btn {
+      border: none;
+      border-radius: 12px;
+      padding: 12px 20px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      background: var(--btn-bg);
+      color: var(--btn-text);
+      transition: transform 120ms ease, opacity 120ms ease;
+    }
+
+    .toggle-btn:active {
+      transform: translateY(1px) scale(0.99);
+      opacity: 0.95;
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>Toggle Themes with Sound</h1>
+    <p>Tumeda ja heleda teema vahetamisel kostab lühike meeldiv klõpsatus.</p>
+    <button class="toggle-btn" id="themeToggle">Vaheta teemat</button>
+  </main>
+
+  <script>
+    let audioContext;
+
+    function playClickSound() {
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      }
+
+      const duration = 0.06;
+      const now = audioContext.currentTime;
+
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+
+      oscillator.type = "triangle";
+      oscillator.frequency.setValueAtTime(860, now);
+      oscillator.frequency.exponentialRampToValueAtTime(520, now + duration);
+
+      gainNode.gain.setValueAtTime(0.0001, now);
+      gainNode.gain.exponentialRampToValueAtTime(0.16, now + 0.01);
+      gainNode.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+
+      oscillator.start(now);
+      oscillator.stop(now + duration);
+    }
+
+    function toggleThemeWithSound() {
+      document.body.classList.toggle("dark");
+      playClickSound();
+    }
+
+    const toggleButton = document.getElementById("themeToggle");
+    toggleButton.addEventListener("click", toggleThemeWithSound);
+  </script>
+</body>
+</html>

@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="et">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Screen Edge Warp</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    html,
+    body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      font-family: Arial, Helvetica, sans-serif;
+      background: radial-gradient(circle at 20% 10%, #243b64, #0b1220 62%);
+      color: #e2e8f0;
+      overflow: hidden;
+    }
+
+    body {
+      position: relative;
+      cursor: crosshair;
+    }
+
+    .hud {
+      position: fixed;
+      top: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-size: 14px;
+      line-height: 1.35;
+      pointer-events: none;
+      backdrop-filter: blur(3px);
+      z-index: 100;
+    }
+
+    .stage {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .warp-obj {
+      position: absolute;
+      width: 120px;
+      height: 120px;
+      border-radius: 18px;
+      display: grid;
+      place-items: center;
+      font-size: 48px;
+      font-weight: 700;
+      color: #0f172a;
+      box-shadow: 0 12px 28px rgba(2, 6, 23, 0.35);
+      cursor: grab;
+      touch-action: none;
+      transform: translate3d(0, 0, 0);
+      transition: transform 80ms ease;
+    }
+
+    .warp-obj:active {
+      cursor: grabbing;
+    }
+
+    .obj-a { background: linear-gradient(135deg, #38bdf8, #0ea5e9); }
+    .obj-b { background: linear-gradient(135deg, #f472b6, #ec4899); }
+    .obj-c { background: linear-gradient(135deg, #34d399, #10b981); }
+    .obj-d { background: linear-gradient(135deg, #fbbf24, #f59e0b); }
+
+    .trail {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      pointer-events: none;
+      opacity: 0;
+      animation: trailFade 400ms ease-out forwards;
+    }
+
+    @keyframes trailFade {
+      from {
+        opacity: 0.6;
+        transform: scale(1);
+      }
+      to {
+        opacity: 0;
+        transform: scale(0.2);
+      }
+    }
+
+    .hint {
+      position: fixed;
+      bottom: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-size: 14px;
+      text-align: center;
+      pointer-events: none;
+      backdrop-filter: blur(3px);
+    }
+  </style>
+</head>
+<body>
+  <div class="hud">Screen Edge Warp (Pac-Man efekt)<br>Lohista objektid ekraani servast välja.</div>
+
+  <div class="stage" id="stage">
+    <div class="warp-obj obj-a" style="left: 40px; top: 40px;">▲</div>
+    <div class="warp-obj obj-b" style="right: 40px; top: 40px;">◆</div>
+    <div class="warp-obj obj-c" style="left: 40px; bottom: 40px;">●</div>
+    <div class="warp-obj obj-d" style="right: 40px; bottom: 40px;">■</div>
+  </div>
+
+  <div class="hint">Drag objektid läbi ekraani servade — nad ilmuvad teiselt poolt! 🎮</div>
+
+  <script>
+    function makeWarpable(element) {
+      let isDragging = false;
+      let grabOffsetX = 0;
+      let grabOffsetY = 0;
+
+      function getStageRect() {
+        return document.getElementById('stage').getBoundingClientRect();
+      }
+
+      function wrapPosition(x, y, width, height) {
+        const stageRect = getStageRect();
+        const maxX = stageRect.width;
+        const maxY = stageRect.height;
+
+        if (x + width < 0) {
+          x = maxX;
+        } else if (x > maxX) {
+          x = -width;
+        }
+
+        if (y + height < 0) {
+          y = maxY;
+        } else if (y > maxY) {
+          y = -height;
+        }
+
+        return { x, y };
+      }
+
+      function createTrail(x, y, bgColor) {
+        const trail = document.createElement('div');
+        trail.className = 'trail';
+        trail.style.left = `${x}px`;
+        trail.style.top = `${y}px`;
+        trail.style.background = bgColor;
+        document.getElementById('stage').appendChild(trail);
+        trail.addEventListener('animationend', () => trail.remove(), { once: true });
+      }
+
+      element.addEventListener('pointerdown', (event) => {
+        isDragging = true;
+        element.setPointerCapture(event.pointerId);
+
+        const rect = element.getBoundingClientRect();
+        grabOffsetX = event.clientX - rect.left;
+        grabOffsetY = event.clientY - rect.top;
+      });
+
+      element.addEventListener('pointermove', (event) => {
+        if (!isDragging) return;
+
+        const stageRect = getStageRect();
+        let x = event.clientX - stageRect.left - grabOffsetX;
+        let y = event.clientY - stageRect.top - grabOffsetY;
+
+        const objWidth = element.offsetWidth;
+        const objHeight = element.offsetHeight;
+
+        const wrapped = wrapPosition(x, y, objWidth, objHeight);
+        x = wrapped.x;
+        y = wrapped.y;
+
+        element.style.left = `${x}px`;
+        element.style.top = `${y}px`;
+
+        const centerX = x + objWidth / 2;
+        const centerY = y + objHeight / 2;
+        const bgColor = window.getComputedStyle(element).background || '#38bdf8';
+        createTrail(centerX, centerY, bgColor);
+      });
+
+      function stopDrag(pointerId) {
+        isDragging = false;
+        if (typeof pointerId === 'number' && element.hasPointerCapture(pointerId)) {
+          element.releasePointerCapture(pointerId);
+        }
+      }
+
+      element.addEventListener('pointerup', (event) => {
+        stopDrag(event.pointerId);
+      });
+
+      element.addEventListener('pointercancel', (event) => {
+        stopDrag(event.pointerId);
+      });
+    }
+
+    document.querySelectorAll('.warp-obj').forEach((obj) => {
+      makeWarpable(obj);
+    });
+  </script>
+</body>
+</html>
