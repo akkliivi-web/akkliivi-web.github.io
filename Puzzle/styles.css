@@ -1,0 +1,240 @@
+:root {
+  --bg: #121212;
+  --panel: #1c1c1c;
+  --surface: #242424;
+  --text: #f2f2f2;
+  --muted: #a8a8a8;
+  --border: #3a3a3a;
+  --board-size: 400px;
+  --grid-size: 5;
+  --piece-size: 80px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+h1 {
+  text-align: center;
+  margin: 16px 0;
+}
+
+h2 {
+  margin: 0 0 10px;
+  font-size: 16px;
+  color: var(--muted);
+}
+
+.app-shell {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 16px;
+  padding: 0 16px 16px;
+  min-height: calc(100vh - 70px);
+}
+
+.controls {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+#uploadInput,
+#cameraInput {
+  display: none;
+}
+
+.btn {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 14px;
+  text-align: center;
+  cursor: pointer;
+}
+
+.btn:hover {
+  filter: brightness(1.1);
+}
+
+.difficulty-select {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 14px;
+}
+
+.text-input {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 14px;
+}
+
+.timer-readout {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 14px;
+  color: var(--text);
+}
+
+.leaderboard-wrap {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.02);
+  display: grid;
+  gap: 8px;
+}
+
+.leaderboard-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.leaderboard-table th,
+.leaderboard-table td {
+  border-bottom: 1px solid var(--border);
+  padding: 6px 4px;
+  text-align: left;
+}
+
+.leaderboard-table th {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.main-layout {
+  display: grid;
+  grid-template-rows: 1fr auto;
+  gap: 16px;
+}
+
+.play-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 16px;
+}
+
+.assembly-wrap,
+.original-wrap,
+.storage-wrap {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.assembly-board {
+  width: var(--board-size);
+  height: var(--board-size);
+  position: relative;
+}
+
+.ghost-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-position: center;
+  background-size: var(--board-size) var(--board-size);
+  background-repeat: no-repeat;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+
+.ghost-overlay.visible {
+  opacity: 0.35;
+}
+
+.assembly-grid {
+  width: var(--board-size);
+  height: var(--board-size);
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(var(--grid-size), var(--piece-size));
+  grid-template-rows: repeat(var(--grid-size), var(--piece-size));
+  border: 1px solid var(--border);
+}
+
+.win-fx-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.slot {
+  width: var(--piece-size);
+  height: var(--piece-size);
+  border: 1px dashed #4a4a4a;
+  background: rgba(255, 255, 255, 0.03);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.original-frame {
+  width: 400px;
+  height: 400px;
+  border: 1px solid var(--border);
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+#originalImage {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.storage-area {
+  min-height: 124px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-content: flex-start;
+}
+
+.puzzle-piece {
+  width: var(--piece-size);
+  height: var(--piece-size);
+  border: 1px solid #666;
+  cursor: grab;
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-color: #000;
+}
+
+.puzzle-piece:active {
+  cursor: grabbing;
+}

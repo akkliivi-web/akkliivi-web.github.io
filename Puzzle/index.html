@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pixel Puzzle</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <h1 id="title">Pixel Puzzle</h1>
+
+  <div class="app-shell">
+    <aside class="controls">
+      <label class="btn" for="uploadInput">Upload photo</label>
+      <input id="uploadInput" type="file" accept="image/*" />
+      <label class="btn" for="cameraInput">Camera</label>
+      <input id="cameraInput" type="file" accept="image/*" capture="environment" />
+      <label for="difficultySelect">Difficulty</label>
+      <select id="difficultySelect" class="difficulty-select">
+        <option value="3">3x3</option>
+        <option value="5" selected>5x5</option>
+        <option value="10">10x10</option>
+      </select>
+      <label for="shapeSelect">Shape</label>
+      <select id="shapeSelect" class="difficulty-select">
+        <option value="rectangle">Rectangle</option>
+        <option value="triangle">Triangles</option>
+        <option value="polygon">Random polygons</option>
+      </select>
+      <label for="musicSelect">Taustamuusika</label>
+      <select id="musicSelect" class="difficulty-select">
+        <option value="none">Pole</option>
+        <option value="relaxing">Rahustav</option>
+        <option value="upbeat">Energiline</option>
+        <option value="ambient">Ambient</option>
+      </select>
+      <input id="musicVolume" type="range" min="0" max="100" value="50" style="width: 100%; cursor: pointer;" />
+
+      <label for="playerNameInput">Mängija nimi</label>
+      <input id="playerNameInput" class="text-input" type="text" maxlength="24" placeholder="Sisesta nimi" />
+      <div id="timerValue" class="timer-readout">Aeg: 0.00 s</div>
+
+      <div class="leaderboard-wrap">
+        <h2>Liidrite tabel</h2>
+        <table class="leaderboard-table" aria-label="Liidrite tabel">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Nimi</th>
+              <th>Aeg</th>
+            </tr>
+          </thead>
+          <tbody id="leaderboardBody"></tbody>
+        </table>
+        <button id="exportRecordsBtn" class="btn" type="button">Salvesta JSON</button>
+        <button id="clearRecordsBtn" class="btn" type="button">Tühjenda tabel</button>
+      </div>
+
+      <button id="hintBtn" class="btn" type="button">Vaata</button>
+      <button id="cutBtn" class="btn" type="button">Cut into puzzles</button>
+    </aside>
+
+    <main class="main-layout">
+      <section class="play-row">
+        <div class="assembly-wrap">
+          <h2>Assembly field</h2>
+          <div id="assemblyBoard" class="assembly-board">
+            <div id="ghostOverlay" class="ghost-overlay"></div>
+            <div id="assemblyField" class="assembly-grid"></div>
+            <canvas id="winFxCanvas" class="win-fx-canvas"></canvas>
+          </div>
+        </div>
+
+        <div class="original-wrap">
+          <h2>Original image</h2>
+          <div class="original-frame">
+            <img id="originalImage" alt="Original" />
+          </div>
+        </div>
+      </section>
+
+      <section class="storage-wrap">
+        <h2>Storage</h2>
+        <div id="storage" class="storage-area"></div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const BOARD_SIZE = 400;
+
+    const titleEl = document.getElementById('title');
+    const uploadInput = document.getElementById('uploadInput');
+    const cameraInput = document.getElementById('cameraInput');
+    const difficultySelect = document.getElementById('difficultySelect');
+    const shapeSelect = document.getElementById('shapeSelect');
+    const musicSelect = document.getElementById('musicSelect');
+    const musicVolume = document.getElementById('musicVolume');
+    const playerNameInput = document.getElementById('playerNameInput');
+    const timerValue = document.getElementById('timerValue');
+    const leaderboardBody = document.getElementById('leaderboardBody');
+    const exportRecordsBtn = document.getElementById('exportRecordsBtn');
+    const clearRecordsBtn = document.getElementById('clearRecordsBtn');
+    const hintBtn = document.getElementById('hintBtn');
+    const cutBtn = document.getElementById('cutBtn');
+    const originalImage = document.getElementById('originalImage');
+    const assemblyBoard = document.getElementById('assemblyBoard');
+    const ghostOverlay = document.getElementById('ghostOverlay');
+    const assemblyField = document.getElementById('assemblyField');
+    const winFxCanvas = document.getElementById('winFxCanvas');
+    const storage = document.getElementById('storage');
+
+    let imageDataUrl = '';
+    let pieces = [];
+    let currentGridSize = Number(difficultySelect.value);
+    let currentShapeMode = shapeSelect.value;
+    let hintVisible = false;
+    let audioContext = null;
+    let pieceClipPaths = [];
+    let hasWon = false;
+    let winAnimationFrame = 0;
+    let winParticles = [];
+    let winCanvasDpr = 1;
+    let winCanvasWidth = BOARD_SIZE;
+    let winCanvasHeight = BOARD_SIZE;
+
+    const RECORDS_STORAGE_KEY = 'pixelPuzzleRecords';
+    const PLAYER_NAME_STORAGE_KEY = 'pixelPuzzlePlayerName';
+    const MAX_RECORDS = 10;
+
+    let records = [];
+    let runStartTimestamp = 0;
+    let timerAnimationFrame = 0;
+    let hasStoredCurrentWin = false;
+
+    let musicAudio = null;
+    let currentMusicTrack = 'none';
+
+    const musicTracks = {
+      relaxing: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+      upbeat: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
+      ambient: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
+    };
+
+    function playBackgroundMusic(trackName) {
+      if (trackName === 'none') {
+        if (musicAudio) {
+          musicAudio.pause();
+          musicAudio = null;
+        }
+        currentMusicTrack = 'none';
+        return;
+      }
+
+      const trackUrl = musicTracks[trackName];
+      if (!trackUrl) return;
+
+      if (musicAudio && currentMusicTrack === trackName) {
+        musicAudio.play();
+        return;
+      }
+
+      if (musicAudio) {
+        musicAudio.pause();
+        musicAudio.src = '';
+      }
+
+      musicAudio = new Audio();
+      musicAudio.src = trackUrl;
+      musicAudio.loop = true;
+      musicAudio.volume = musicVolume.value / 100;
+      musicAudio.play().catch(() => {
+        console.log('Autoplay blocked. Music will play when user interacts with the page.');
+      });
+      currentMusicTrack = trackName;
+    }
+
+    function formatDuration(ms) {
+      return `${(ms / 1000).toFixed(2)} s`;
+    }
+
+    function updateTimerLabel(now = performance.now()) {
+      if (runStartTimestamp) {
+        timerValue.textContent = `Aeg: ${formatDuration(now - runStartTimestamp)}`;
+      } else {
+        timerValue.textContent = 'Aeg: 0.00 s';
+      }
+    }
+
+    function stopTimerTicker() {
+      if (timerAnimationFrame) {
+        cancelAnimationFrame(timerAnimationFrame);
+        timerAnimationFrame = 0;
+      }
+    }
+
+    function startTimerTicker() {
+      if (timerAnimationFrame) return;
+
+      const tick = (now) => {
+        updateTimerLabel(now);
+        if (runStartTimestamp) {
+          timerAnimationFrame = requestAnimationFrame(tick);
+        } else {
+          timerAnimationFrame = 0;
+        }
+      };
+
+      timerAnimationFrame = requestAnimationFrame(tick);
+    }
+
+    function resetRunTimer() {
+      runStartTimestamp = 0;
+      hasStoredCurrentWin = false;
+      stopTimerTicker();
+      updateTimerLabel();
+    }
+
+    function startRunTimerIfNeeded() {
+      if (runStartTimestamp || !pieces.length || hasWon) return;
+      runStartTimestamp = performance.now();
+      startTimerTicker();
+    }
+
+    function loadRecords() {
+      try {
+        const raw = localStorage.getItem(RECORDS_STORAGE_KEY);
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function saveRecords() {
+      localStorage.setItem(RECORDS_STORAGE_KEY, JSON.stringify(records));
+    }
+
+    function renderLeaderboard() {
+      leaderboardBody.innerHTML = '';
+
+      if (!records.length) {
+        const row = document.createElement('tr');
+        const cell = document.createElement('td');
+        cell.colSpan = 3;
+        cell.textContent = 'Rekordeid veel ei ole';
+        row.appendChild(cell);
+        leaderboardBody.appendChild(row);
+        return;
+      }
+
+      records.forEach((record, index) => {
+        const row = document.createElement('tr');
+
+        const rankCell = document.createElement('td');
+        rankCell.textContent = String(index + 1);
+
+        const nameCell = document.createElement('td');
+        nameCell.textContent = `${record.name} (${record.difficulty})`;
+
+        const timeCell = document.createElement('td');
+        timeCell.textContent = formatDuration(record.timeMs);
+
+        row.appendChild(rankCell);
+        row.appendChild(nameCell);
+        row.appendChild(timeCell);
+        leaderboardBody.appendChild(row);
+      });
+    }
+
+    function exportRecordsToJson() {
+      const payload = {
+        updatedAt: new Date().toISOString(),
+        records,
+      };
+
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const downloadUrl = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = downloadUrl;
+      anchor.download = 'records.json';
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(downloadUrl);
+    }
+
+    function completeRunAndSaveRecord() {
+      if (hasStoredCurrentWin || !runStartTimestamp) return;
+
+      const durationMs = Math.max(1, Math.round(performance.now() - runStartTimestamp));
+      const name = (playerNameInput.value || '').trim() || 'Mängija';
+
+      const record = {
+        name,
+        timeMs: durationMs,
+        difficulty: `${currentGridSize}x${currentGridSize}`,
+        shape: currentShapeMode,
+        createdAt: new Date().toISOString(),
+      };
+
+      records.push(record);
+      records = records
+        .sort((a, b) => a.timeMs - b.timeMs)
+        .slice(0, MAX_RECORDS);
+
+      saveRecords();
+      renderLeaderboard();
+      exportRecordsToJson();
+
+      hasStoredCurrentWin = true;
+      runStartTimestamp = 0;
+      stopTimerTicker();
+      updateTimerLabel();
+    }
+
+    function resizeWinCanvas() {
+      const rect = assemblyBoard.getBoundingClientRect();
+      winCanvasDpr = window.devicePixelRatio || 1;
+      winCanvasWidth = Math.max(1, rect.width);
+      winCanvasHeight = Math.max(1, rect.height);
+      winFxCanvas.width = Math.max(1, Math.floor(winCanvasWidth * winCanvasDpr));
+      winFxCanvas.height = Math.max(1, Math.floor(winCanvasHeight * winCanvasDpr));
+      winFxCanvas.style.width = `${rect.width}px`;
+      winFxCanvas.style.height = `${rect.height}px`;
+      const ctx = winFxCanvas.getContext('2d');
+      if (ctx) {
+        ctx.setTransform(winCanvasDpr, 0, 0, winCanvasDpr, 0, 0);
+      }
+    }
+
+    function clearWinCanvas() {
+      const ctx = winFxCanvas.getContext('2d');
+      if (!ctx) return;
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, winFxCanvas.width, winFxCanvas.height);
+      ctx.setTransform(winCanvasDpr, 0, 0, winCanvasDpr, 0, 0);
+    }
+
+    function stopWinExplosion() {
+      if (winAnimationFrame) {
+        cancelAnimationFrame(winAnimationFrame);
+        winAnimationFrame = 0;
+      }
+      winParticles = [];
+      clearWinCanvas();
+    }
+
+    function startWinExplosion() {
+      stopWinExplosion();
+      resizeWinCanvas();
+
+      const ctx = winFxCanvas.getContext('2d');
+      if (!ctx) return;
+
+      const centerX = winCanvasWidth / 2;
+      const centerY = winCanvasHeight / 2;
+      const colors = ['#f2f2f2', '#a8a8a8', '#ffffff'];
+      const gravity = 560;
+
+      winParticles = Array.from({ length: 90 }, (_, index) => {
+        const angle = (Math.PI * 2 * index) / 90 + Math.random() * 0.25;
+        const speed = 120 + Math.random() * 260;
+        return {
+          x: centerX,
+          y: centerY,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          life: 700 + Math.random() * 650,
+          age: 0,
+          size: 1.5 + Math.random() * 2.5,
+          color: colors[Math.floor(Math.random() * colors.length)],
+        };
+      });
+
+      let lastTime = performance.now();
+
+      const animate = (time) => {
+        const deltaMs = Math.min(40, time - lastTime);
+        lastTime = time;
+        const dt = deltaMs / 1000;
+
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.clearRect(0, 0, winFxCanvas.width, winFxCanvas.height);
+        ctx.setTransform(winCanvasDpr, 0, 0, winCanvasDpr, 0, 0);
+
+        winParticles = winParticles.filter((particle) => {
+          particle.age += deltaMs;
+          if (particle.age >= particle.life) return false;
+
+          particle.vy += gravity * dt;
+          particle.x += particle.vx * dt;
+          particle.y += particle.vy * dt;
+
+          const alpha = Math.max(0, 1 - particle.age / particle.life);
+          ctx.globalAlpha = alpha;
+          ctx.fillStyle = particle.color;
+          ctx.beginPath();
+          ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+          ctx.fill();
+          return true;
+        });
+
+        ctx.globalAlpha = 1;
+
+        if (winParticles.length > 0) {
+          winAnimationFrame = requestAnimationFrame(animate);
+        } else {
+          winAnimationFrame = 0;
+          ctx.setTransform(1, 0, 0, 1, 0, 0);
+          ctx.clearRect(0, 0, winFxCanvas.width, winFxCanvas.height);
+          ctx.setTransform(winCanvasDpr, 0, 0, winCanvasDpr, 0, 0);
+        }
+      };
+
+      winAnimationFrame = requestAnimationFrame(animate);
+    }
+
+    function applyDifficultyStyles() {
+      const pieceSize = BOARD_SIZE / currentGridSize;
+      document.documentElement.style.setProperty('--board-size', `${BOARD_SIZE}px`);
+      document.documentElement.style.setProperty('--grid-size', String(currentGridSize));
+      document.documentElement.style.setProperty('--piece-size', `${pieceSize}px`);
+    }
+
+    function createAssemblyGrid() {
+      applyDifficultyStyles();
+      const totalPieces = currentGridSize * currentGridSize;
+      assemblyField.innerHTML = '';
+      for (let i = 0; i < totalPieces; i += 1) {
+        const slot = document.createElement('div');
+        slot.className = 'slot';
+        slot.dataset.slotIndex = String(i);
+
+        if (pieceClipPaths[i]) {
+          slot.style.clipPath = pieceClipPaths[i];
+        }
+
+        assemblyField.appendChild(slot);
+      }
+    }
+
+    function triangleClipPath(index) {
+      const orientation = index % 4;
+      if (orientation === 0) return 'polygon(50% 0%, 0% 100%, 100% 100%)';
+      if (orientation === 1) return 'polygon(0% 0%, 100% 50%, 0% 100%)';
+      if (orientation === 2) return 'polygon(0% 0%, 100% 0%, 50% 100%)';
+      return 'polygon(100% 0%, 100% 100%, 0% 50%)';
+    }
+
+    function rectangleClipPath() {
+      return 'polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)';
+    }
+
+    function seededRandom(seed) {
+      const x = Math.sin(seed) * 10000;
+      return x - Math.floor(x);
+    }
+
+    function polygonClipPath(index) {
+      const pointCount = 5 + Math.floor(seededRandom(index * 11 + 3) * 3);
+      const points = [];
+
+      for (let i = 0; i < pointCount; i += 1) {
+        const baseAngle = (Math.PI * 2 * i) / pointCount;
+        const angleJitter = (seededRandom(index * 31 + i * 17 + 7) - 0.5) * 0.45;
+        const radius = 0.38 + seededRandom(index * 47 + i * 23 + 13) * 0.12;
+        const angle = baseAngle + angleJitter;
+        const x = 0.5 + Math.cos(angle) * radius;
+        const y = 0.5 + Math.sin(angle) * radius;
+        const px = Math.max(0.05, Math.min(0.95, x));
+        const py = Math.max(0.05, Math.min(0.95, y));
+        points.push(`${(px * 100).toFixed(1)}% ${(py * 100).toFixed(1)}%`);
+      }
+
+      return `polygon(${points.join(', ')})`;
+    }
+
+    function buildPieceClipPaths(totalPieces) {
+      const clips = [];
+      for (let i = 0; i < totalPieces; i += 1) {
+        if (currentShapeMode === 'rectangle') {
+          clips.push(rectangleClipPath());
+        } else if (currentShapeMode === 'polygon') {
+          clips.push(polygonClipPath(i));
+        } else {
+          clips.push(triangleClipPath(i));
+        }
+      }
+      return clips;
+    }
+
+    function playSnapSound() {
+      try {
+        if (!audioContext) {
+          const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
+          if (!AudioContextCtor) return;
+          audioContext = new AudioContextCtor();
+        }
+
+        const now = audioContext.currentTime;
+        const gain = audioContext.createGain();
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.exponentialRampToValueAtTime(0.18, now + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.12);
+        gain.connect(audioContext.destination);
+
+        const osc = audioContext.createOscillator();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(880, now);
+        osc.frequency.exponentialRampToValueAtTime(520, now + 0.12);
+        osc.connect(gain);
+        osc.start(now);
+        osc.stop(now + 0.12);
+      } catch {
+      }
+    }
+
+    function placePieceInSlot(pieceEl, slotEl, withSound = false) {
+      if (!pieceEl || !slotEl) return;
+
+      const currentPiece = slotEl.firstElementChild;
+      if (currentPiece && currentPiece !== pieceEl) {
+        storage.appendChild(currentPiece);
+      }
+
+      slotEl.appendChild(pieceEl);
+      if (withSound) {
+        playSnapSound();
+      }
+      checkSuccess();
+    }
+
+    function getSnapTargetSlot(pieceEl, dropClientX, dropClientY) {
+      if (!pieceEl) return null;
+
+      const correctIndex = Number(pieceEl.dataset.correctIndex);
+      if (!Number.isFinite(correctIndex)) return null;
+
+      const pieceSize = BOARD_SIZE / currentGridSize;
+      const row = Math.floor(correctIndex / currentGridSize);
+      const col = correctIndex % currentGridSize;
+
+      const fieldRect = assemblyField.getBoundingClientRect();
+      const x = dropClientX - fieldRect.left;
+      const y = dropClientY - fieldRect.top;
+
+      if (x < 0 || y < 0 || x > fieldRect.width || y > fieldRect.height) {
+        return null;
+      }
+
+      const targetCenterX = (col + 0.5) * pieceSize;
+      const targetCenterY = (row + 0.5) * pieceSize;
+      const distance = Math.hypot(x - targetCenterX, y - targetCenterY);
+      const snapDistance = pieceSize * 0.45;
+
+      if (distance > snapDistance) {
+        return null;
+      }
+
+      return assemblyField.querySelector(`.slot[data-slot-index="${correctIndex}"]`);
+    }
+
+    function makeDraggable(pieceEl) {
+      pieceEl.setAttribute('draggable', 'true');
+      pieceEl.addEventListener('pointerdown', () => {
+        startRunTimerIfNeeded();
+      });
+      pieceEl.addEventListener('dragstart', (event) => {
+        startRunTimerIfNeeded();
+        event.dataTransfer.setData('text/plain', pieceEl.id);
+      });
+    }
+
+    storage.addEventListener('dragover', (event) => {
+      event.preventDefault();
+    });
+
+    storage.addEventListener('drop', (event) => {
+      event.preventDefault();
+      startRunTimerIfNeeded();
+      const pieceId = event.dataTransfer.getData('text/plain');
+      if (!pieceId) return;
+
+      const pieceEl = document.getElementById(pieceId);
+      if (!pieceEl) return;
+
+      storage.appendChild(pieceEl);
+      checkSuccess();
+    });
+
+    assemblyBoard.addEventListener('dragover', (event) => {
+      event.preventDefault();
+    });
+
+    assemblyBoard.addEventListener('drop', (event) => {
+      event.preventDefault();
+      startRunTimerIfNeeded();
+      const pieceId = event.dataTransfer.getData('text/plain');
+      if (!pieceId) return;
+
+      const pieceEl = document.getElementById(pieceId);
+      if (!pieceEl) return;
+
+      const snapSlot = getSnapTargetSlot(pieceEl, event.clientX, event.clientY);
+      if (!snapSlot) return;
+
+      placePieceInSlot(pieceEl, snapSlot, true);
+    });
+
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+    }
+
+    function checkSuccess() {
+      const slots = Array.from(assemblyField.querySelectorAll('.slot'));
+      let allCorrect = true;
+
+      for (const slot of slots) {
+        const expected = slot.dataset.slotIndex;
+        const pieceEl = slot.firstElementChild;
+
+        if (!pieceEl || pieceEl.dataset.correctIndex !== expected) {
+          allCorrect = false;
+          break;
+        }
+      }
+
+      if (allCorrect) {
+        titleEl.textContent = 'Success';
+        if (!hasWon) {
+          hasWon = true;
+          startWinExplosion();
+          completeRunAndSaveRecord();
+        }
+      } else {
+        titleEl.textContent = 'Pixel Puzzle';
+        hasWon = false;
+      }
+    }
+
+    function resizeToPuzzleCanvas(dataUrl) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = BOARD_SIZE;
+          canvas.height = BOARD_SIZE;
+
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            reject(new Error('Canvas context not available'));
+            return;
+          }
+
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL('image/png'));
+        };
+        img.onerror = () => reject(new Error('Failed to load image'));
+        img.src = dataUrl;
+      });
+    }
+
+    function renderPieces() {
+      const pieceSize = BOARD_SIZE / currentGridSize;
+      const totalPieces = currentGridSize * currentGridSize;
+
+      pieceClipPaths = buildPieceClipPaths(totalPieces);
+      hasWon = false;
+      stopWinExplosion();
+      resetRunTimer();
+      storage.innerHTML = '';
+      createAssemblyGrid();
+      titleEl.textContent = 'Pixel Puzzle';
+
+      pieces = [];
+
+      for (let row = 0; row < currentGridSize; row += 1) {
+        for (let col = 0; col < currentGridSize; col += 1) {
+          const index = row * currentGridSize + col;
+          const piece = document.createElement('div');
+
+          piece.className = 'puzzle-piece';
+          piece.id = `piece-${index}`;
+          piece.dataset.correctIndex = String(index);
+          piece.style.backgroundImage = `url("${imageDataUrl}")`;
+          piece.style.backgroundSize = `${BOARD_SIZE}px ${BOARD_SIZE}px`;
+          piece.style.backgroundPosition = `-${col * pieceSize}px -${row * pieceSize}px`;
+          piece.style.clipPath = pieceClipPaths[index];
+
+          makeDraggable(piece);
+          pieces.push(piece);
+        }
+      }
+
+      shuffle(pieces);
+      pieces.forEach((piece) => storage.appendChild(piece));
+    }
+
+    function loadImageFile(file) {
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const rawDataUrl = String(reader.result || '');
+        if (!rawDataUrl) return;
+
+        try {
+          imageDataUrl = await resizeToPuzzleCanvas(rawDataUrl);
+          originalImage.src = imageDataUrl;
+          ghostOverlay.style.backgroundImage = `url("${imageDataUrl}")`;
+          hintVisible = false;
+          ghostOverlay.classList.remove('visible');
+          hasWon = false;
+          stopWinExplosion();
+          resetRunTimer();
+          storage.innerHTML = '';
+          titleEl.textContent = 'Pixel Puzzle';
+          createAssemblyGrid();
+        } catch {
+          imageDataUrl = '';
+          originalImage.removeAttribute('src');
+          ghostOverlay.style.backgroundImage = 'none';
+          hintVisible = false;
+          ghostOverlay.classList.remove('visible');
+          hasWon = false;
+          stopWinExplosion();
+          resetRunTimer();
+        }
+      };
+
+      reader.readAsDataURL(file);
+    }
+
+    uploadInput.addEventListener('change', () => {
+      loadImageFile(uploadInput.files?.[0]);
+      uploadInput.value = '';
+    });
+
+    cameraInput.addEventListener('change', () => {
+      loadImageFile(cameraInput.files?.[0]);
+      cameraInput.value = '';
+    });
+
+    async function openCameraCapture() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
+          audio: false,
+        });
+
+        const video = document.createElement('video');
+        video.srcObject = stream;
+        video.play();
+
+        const modal = document.createElement('div');
+        modal.style.cssText = `
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: rgba(0, 0, 0, 0.9);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          z-index: 9999;
+        `;
+
+        video.style.cssText = `
+          max-width: 90vw;
+          max-height: 70vh;
+          border-radius: 8px;
+        `;
+
+        const buttonContainer = document.createElement('div');
+        buttonContainer.style.cssText = `
+          display: flex;
+          gap: 20px;
+          margin-top: 20px;
+        `;
+
+        const captureBtn = document.createElement('button');
+        captureBtn.textContent = 'Capture';
+        captureBtn.style.cssText = `
+          padding: 12px 24px;
+          font-size: 16px;
+          background: #4CAF50;
+          color: white;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+        `;
+
+        const cancelBtn = document.createElement('button');
+        cancelBtn.textContent = 'Cancel';
+        cancelBtn.style.cssText = `
+          padding: 12px 24px;
+          font-size: 16px;
+          background: #f44336;
+          color: white;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+        `;
+
+        function closeModal() {
+          stream.getTracks().forEach((track) => track.stop());
+          modal.remove();
+        }
+
+        captureBtn.addEventListener('click', () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(video, 0, 0);
+            const dataUrl = canvas.toDataURL('image/jpeg');
+            const blob = canvas.toBlob((blob) => {
+              if (blob) {
+                const file = new File([blob], 'camera-capture.jpg', { type: 'image/jpeg' });
+                loadImageFile(file);
+                closeModal();
+              }
+            }, 'image/jpeg', 0.95);
+          }
+        });
+
+        cancelBtn.addEventListener('click', closeModal);
+
+        buttonContainer.appendChild(captureBtn);
+        buttonContainer.appendChild(cancelBtn);
+        modal.appendChild(video);
+        modal.appendChild(buttonContainer);
+        document.body.appendChild(modal);
+      } catch (error) {
+        alert('Camera access denied or not available. Please check your browser permissions.');
+        console.error('Camera error:', error);
+      }
+    }
+
+    document.querySelector('label[for="cameraInput"]').addEventListener('click', (event) => {
+      event.preventDefault();
+      openCameraCapture();
+    });
+
+    cutBtn.addEventListener('click', () => {
+      if (!imageDataUrl) return;
+      renderPieces();
+    });
+
+    hintBtn.addEventListener('click', () => {
+      if (!imageDataUrl) return;
+      hintVisible = !hintVisible;
+      ghostOverlay.classList.toggle('visible', hintVisible);
+    });
+
+    difficultySelect.addEventListener('change', () => {
+      currentGridSize = Number(difficultySelect.value);
+      storage.innerHTML = '';
+      titleEl.textContent = 'Pixel Puzzle';
+      pieceClipPaths = [];
+      hasWon = false;
+      stopWinExplosion();
+      resetRunTimer();
+      createAssemblyGrid();
+    });
+
+    shapeSelect.addEventListener('change', () => {
+      currentShapeMode = shapeSelect.value;
+      storage.innerHTML = '';
+      titleEl.textContent = 'Pixel Puzzle';
+      pieceClipPaths = [];
+      hasWon = false;
+      stopWinExplosion();
+      resetRunTimer();
+      createAssemblyGrid();
+    });
+
+    musicSelect.addEventListener('change', () => {
+      playBackgroundMusic(musicSelect.value);
+    });
+
+    musicVolume.addEventListener('input', () => {
+      if (musicAudio) {
+        musicAudio.volume = musicVolume.value / 100;
+      }
+    });
+
+    playerNameInput.addEventListener('change', () => {
+      localStorage.setItem(PLAYER_NAME_STORAGE_KEY, playerNameInput.value.trim());
+    });
+
+    exportRecordsBtn.addEventListener('click', () => {
+      exportRecordsToJson();
+    });
+
+    clearRecordsBtn.addEventListener('click', () => {
+      records = [];
+      saveRecords();
+      renderLeaderboard();
+      exportRecordsToJson();
+    });
+
+    window.addEventListener('resize', () => {
+      resizeWinCanvas();
+      if (!winAnimationFrame) {
+        clearWinCanvas();
+      }
+    });
+
+    const savedName = localStorage.getItem(PLAYER_NAME_STORAGE_KEY) || '';
+    if (savedName) {
+      playerNameInput.value = savedName;
+    }
+
+    records = loadRecords()
+      .filter((entry) => entry && Number.isFinite(entry.timeMs))
+      .sort((a, b) => a.timeMs - b.timeMs)
+      .slice(0, MAX_RECORDS);
+    renderLeaderboard();
+    updateTimerLabel();
+
+    resizeWinCanvas();
+    createAssemblyGrid();
+  </script>
+</body>
+</html>
