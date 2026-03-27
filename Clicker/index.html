@@ -1,0 +1,1094 @@
+<!DOCTYPE html>
+<html lang="et">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bunny Clicker</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="main-menu" id="mainMenu" role="dialog" aria-label="Main menu" aria-modal="true">
+        <div class="main-menu-card">
+            <h2 id="mainMenuTitle">Main Menu</h2>
+            <p id="mainMenuSubtitle">Choose how to play.</p>
+            <button class="main-menu-button" id="continueButton" type="button">Continue</button>
+            <button class="main-menu-button" id="newGameButton" type="button">Start a new game</button>
+            <button class="main-menu-button" id="languagesButton" type="button">Languages</button>
+        </div>
+    </div>
+
+    <div class="cutscene is-hidden" id="introCutscene" role="dialog" aria-label="Intro cutscene" aria-modal="true">
+        <p class="cutscene-text" id="cutsceneText"></p>
+        <img class="cutscene-hero is-hidden" id="cutsceneHero" src="Hero/BunnyHero.png" alt="Hero bunny">
+    </div>
+
+    <div class="cutscene is-hidden" id="endCutscene" role="dialog" aria-label="Ending cutscene" aria-modal="true">
+        <p class="cutscene-text" id="endCutsceneText"></p>
+    </div>
+
+    <div class="nickname-modal is-hidden" id="nicknameModal" role="dialog" aria-label="Choose nickname" aria-modal="true">
+        <div class="nickname-card">
+            <h2 id="nicknameTitle">Your hero name</h2>
+            <p id="nicknameSubtitle">Enter your nickname to begin the adventure.</p>
+            <input class="nickname-input" id="nicknameInput" type="text" maxlength="20" placeholder="Enter nickname" autocomplete="off">
+            <button class="main-menu-button" id="saveNicknameButton" type="button">Start game</button>
+        </div>
+    </div>
+
+    <div class="nickname-modal is-hidden" id="languageModal" role="dialog" aria-label="Choose language" aria-modal="true">
+        <div class="nickname-card">
+            <h2 id="languageTitle">Languages</h2>
+            <p id="languageSubtitle">Choose your language.</p>
+            <button class="main-menu-button" id="languageEnButton" type="button">English</button>
+            <button class="main-menu-button" id="languageRuButton" type="button">Русский</button>
+            <button class="main-menu-button" id="languageCloseButton" type="button">Close</button>
+        </div>
+    </div>
+
+    <div class="score-hud"><span id="scoreLabel">Score:</span> <span class="score-value" id="count">0</span></div>
+    <button class="reset-button open-menu-button" id="openMainMenuButton" type="button">Main menu</button>
+    <button class="reset-button" id="resetPointsButton" type="button">Reset points</button>
+    <button class="reset-button reset-upgrades-button" id="resetUpgradesButton" type="button">Reset upgrades</button>
+
+    <main class="clicker" aria-live="polite">
+        <h1 id="gameTitle">Bunny Clicker</h1>
+        <p class="player-nickname" id="playerNickname">Hero</p>
+
+        <button class="bunny-button" id="bunnyButton" type="button" aria-label="Click bunny for points">
+            <img class="bunny-image" id="bunnyImage" src="Hero/BunnyIdle.png" alt="Bunny">
+        </button>
+    </main>
+
+    <aside class="upgrade-panel" aria-label="Upgrades">
+        <h2 id="upgradesTitle">Upgrades</h2>
+        <p id="doubleDesc">Unlock at 200 points. Doubles bunny click points.</p>
+        <button class="upgrade-button" id="doublePointsButton" type="button" disabled>
+            x2 Click Points
+        </button>
+        <p class="upgrade-status" id="upgradeStatus">Need 200 points to unlock.</p>
+
+        <hr class="upgrade-divider">
+
+        <p id="world2Desc">Unlock at 500 points. World 2.</p>
+        <button class="upgrade-button" id="world2Button" type="button" disabled>
+            World 2
+        </button>
+        <p class="upgrade-status" id="world2Status">Need 500 points to unlock.</p>
+
+        <hr class="upgrade-divider">
+
+        <p id="world3Desc">Price: 900 points. World 3 and sets x4 points.</p>
+        <button class="upgrade-button" id="world3Button" type="button" disabled>
+            World 3 (x4)
+        </button>
+        <p class="upgrade-status" id="world3Status">Need World 2 first.</p>
+
+        <hr class="upgrade-divider">
+
+        <p id="world4Desc">Price: 1500 points. World 4 and sets x10 points.</p>
+        <button class="upgrade-button" id="world4Button" type="button" disabled>
+            World 4 (x10)
+        </button>
+        <p class="upgrade-status" id="world4Status">Need World 3 first.</p>
+
+        <hr class="upgrade-divider">
+
+        <p id="world5Desc">Price: 3000 points. World 5.</p>
+        <button class="upgrade-button" id="world5Button" type="button" disabled>
+            World 5
+        </button>
+        <p class="upgrade-status" id="world5Status">Need World 4 first.</p>
+
+        <hr class="upgrade-divider">
+
+        <p id="bossBattleDesc">Price: 6000 points. Battle boss enemies to earn massive points.</p>
+        <button class="upgrade-button" id="bossBattleButton" type="button" disabled>
+            Boss Battle
+        </button>
+        <p class="upgrade-status" id="bossBattleStatus">Need 6000 points to unlock.</p>
+    </aside>
+
+    <div class="boss-battle is-hidden" id="bossBattle">
+        <button class="boss-exit-button" id="bossBattleCloseButton" type="button">Exit Battle</button>
+        
+        <h1 class="boss-title" id="bossTitle">BOSS BATTLE</h1>
+        
+        <div class="boss-health-bar-container">
+            <p class="boss-health-label" id="bossHealthLabel">Enemy HP:</p>
+            <div class="boss-health-bar">
+                <div class="boss-health-fill" id="bossHealthFill"></div>
+            </div>
+            <p class="boss-health-text" id="bossHealthText">1000 / 1000</p>
+        </div>
+        
+        <div class="boss-arena">
+            <button class="boss-enemy-button" id="bossEnemyButton" type="button" aria-label="Click enemy to attack">
+                <img class="boss-enemy" id="bossEnemyImage" src="Boss Battle/Enemy1.png" alt="Boss enemy">
+            </button>
+            
+            <button class="bunny-button boss-bunny-button" id="bossBunnyButton" type="button" aria-label="Bunny attacking">
+                <img class="bunny-image" id="bossBunnyImage" src="Hero/BunnyIdleW5.png" alt="Bunny">
+            </button>
+        </div>
+        
+        <div class="boss-info">
+            <p id="bossEnemyName">Enemy 1</p>
+            <p id="bossMessage">Click the enemy to attack!</p>
+        </div>
+    </div>
+
+    <script>
+        let count = 0;
+        let pointsPerClick = 1;
+        let isDoubleUpgradeBought = false;
+        let isWorld2Bought = false;
+        let isWorld3Bought = false;
+        let isWorld4Bought = false;
+        let isWorld5Bought = false;
+        let isBossBattleBought = false;
+        let isBossBattleActive = false;
+        let currentEnemyIndex = 0;
+        let bossHealth = 1000;
+        const maxBossHealth = 1000;
+        const enemyHealths = [250, 350, 400];
+        const damagePerHit = 25;
+        let playerNickname = 'Hero';
+        const unlockScore = 200;
+        const world2UnlockScore = 500;
+        const world3UnlockScore = 900;
+        const world4UnlockScore = 1500;
+        const world5UnlockScore = 3000;
+        const bossBattleUnlockScore = 6000;
+        const saveKey = 'bunny-clicker-save-v1';
+        const languageKey = 'bunny-clicker-language-v1';
+        let currentLanguage = localStorage.getItem(languageKey) || 'en';
+
+        const translations = {
+            en: {
+                appTitle: 'Bunny Clicker',
+                mainMenuTitle: 'Main Menu',
+                mainMenuSubtitle: 'Choose how to play.',
+                continue: 'Continue',
+                continueNoSave: 'Continue (no save)',
+                newGame: 'Start a new game',
+                languages: 'Languages',
+                nicknameTitle: 'Your hero name',
+                nicknameSubtitle: 'Enter your nickname to begin the adventure.',
+                nicknamePlaceholder: 'Enter nickname',
+                startGame: 'Start game',
+                score: 'Score:',
+                openMainMenu: 'Main menu',
+                resetPoints: 'Reset points',
+                resetUpgrades: 'Reset upgrades',
+                gameTitle: 'Bunny Clicker',
+                upgradesTitle: 'Upgrades',
+                doubleDesc: 'Unlock at 200 points. Doubles bunny click points.',
+                doubleButton: 'x2 Click Points',
+                world2Desc: 'Unlock at 500 points. World 2.',
+                world2Button: 'World 2',
+                world3Desc: 'Price: 900 points. World 3 and sets x4 points.',
+                world3Button: 'World 3 (x4)',
+                world4Desc: 'Price: 1500 points. World 4 and sets x10 points.',
+                world4Button: 'World 4 (x10)',
+                world5Desc: 'Price: 3000 points. World 5.',
+                world5Button: 'World 5',
+                bossBattleDesc: 'Price: 6000 points. Battle boss enemies to earn massive points.',
+                bossBattleButton: 'Boss Battle',
+                bossBattle: 'BOSS BATTLE',
+                bossHp: 'Enemy HP:',
+                exitBattle: 'Exit Battle',
+                bossClick: 'Click the enemy to attack!',
+                enemyName: 'Enemy {number}',
+                defeatedEnemy: 'Defeated! Enemy {number} appears!',
+                youWin: 'You win!',
+                statusBoughtClicks: 'Purchased: bunny clicks now give +{value}.',
+                statusReadyDouble: 'Upgrade ready: click to double bunny click points.',
+                statusNeedPoints: 'Need {value} more points to unlock.',
+                statusBoughtWorld2: 'Purchased: World 2 is active.',
+                statusReadyWorld2: 'Upgrade ready: switch to World 2.',
+                statusBoughtWorld3: 'Purchased: World 3 active and clicks are x4.',
+                statusNeedWorld2: 'Need World 2 first.',
+                statusReadyWorld3: 'Upgrade ready: switch to World 3 and x4 points.',
+                statusBoughtWorld4: 'Purchased: World 4 active and clicks are x10.',
+                statusNeedWorld3: 'Need World 3 first.',
+                statusReadyWorld4: 'Upgrade ready: switch to World 4 and x10 points.',
+                statusBoughtWorld5: 'Purchased: World 5 is active.',
+                statusNeedWorld4: 'Need World 4 first.',
+                statusReadyWorld5: 'Upgrade ready: switch to World 5.',
+                statusBoughtBoss: 'Purchased: Start boss battle below!',
+                statusReadyBoss: 'Upgrade ready: enter boss battle!',
+                languageTitle: 'Languages',
+                languageSubtitle: 'Choose your language.',
+                languageEnglish: 'English',
+                languageRussian: 'Русский',
+                close: 'Close',
+                introCutsceneLines: [
+                    'A meteorite fell to Earth, unleashing an ancient evil, and everyone thought there was no salvation...',
+                    'However, an unknown hero appeared who was meant to defeat the evil unleashed by the meteorite.',
+                    'You are that hero'
+                ],
+                endCutsceneLines: [
+                    'After the hero triumphed over evil, it was gone forever.',
+                    'The End?'
+                ]
+            },
+            ru: {
+                appTitle: 'Кликер Кролика',
+                mainMenuTitle: 'Главное меню',
+                mainMenuSubtitle: 'Выберите, как играть.',
+                continue: 'Продолжить',
+                continueNoSave: 'Продолжить (нет сохранения)',
+                newGame: 'Новая игра',
+                languages: 'Языки',
+                nicknameTitle: 'Имя героя',
+                nicknameSubtitle: 'Введите никнейм, чтобы начать приключение.',
+                nicknamePlaceholder: 'Введите никнейм',
+                startGame: 'Начать игру',
+                score: 'Очки:',
+                openMainMenu: 'Главное меню',
+                resetPoints: 'Сброс очков',
+                resetUpgrades: 'Сброс улучшений',
+                gameTitle: 'Кликер Кролика',
+                upgradesTitle: 'Улучшения',
+                doubleDesc: 'Открывается на 200 очках. Удваивает очки за клик.',
+                doubleButton: 'x2 Очки за клик',
+                world2Desc: 'Открывается на 500 очках. Мир 2.',
+                world2Button: 'Мир 2',
+                world3Desc: 'Цена: 900 очков. Мир 3 и x4 очков.',
+                world3Button: 'Мир 3 (x4)',
+                world4Desc: 'Цена: 1500 очков. Мир 4 и x10 очков.',
+                world4Button: 'Мир 4 (x10)',
+                world5Desc: 'Цена: 3000 очков. Мир 5.',
+                world5Button: 'Мир 5',
+                bossBattleDesc: 'Цена: 6000 очков. Сразитесь с боссами за большую награду.',
+                bossBattleButton: 'Битва с боссом',
+                bossBattle: 'БИТВА С БОССОМ',
+                bossHp: 'HP врага:',
+                exitBattle: 'Выйти из боя',
+                bossClick: 'Кликайте по врагу, чтобы атаковать!',
+                enemyName: 'Враг {number}',
+                defeatedEnemy: 'Побеждён! Появляется враг {number}!',
+                youWin: 'Вы победили!',
+                statusBoughtClicks: 'Куплено: кролик теперь даёт +{value} за клик.',
+                statusReadyDouble: 'Улучшение готово: нажмите, чтобы удвоить очки за клик.',
+                statusNeedPoints: 'Нужно ещё {value} очков для открытия.',
+                statusBoughtWorld2: 'Куплено: активирован Мир 2.',
+                statusReadyWorld2: 'Улучшение готово: перейти в Мир 2.',
+                statusBoughtWorld3: 'Куплено: активирован Мир 3, клики x4.',
+                statusNeedWorld2: 'Сначала нужен Мир 2.',
+                statusReadyWorld3: 'Улучшение готово: перейти в Мир 3 и x4 очков.',
+                statusBoughtWorld4: 'Куплено: активирован Мир 4, клики x10.',
+                statusNeedWorld3: 'Сначала нужен Мир 3.',
+                statusReadyWorld4: 'Улучшение готово: перейти в Мир 4 и x10 очков.',
+                statusBoughtWorld5: 'Куплено: активирован Мир 5.',
+                statusNeedWorld4: 'Сначала нужен Мир 4.',
+                statusReadyWorld5: 'Улучшение готово: перейти в Мир 5.',
+                statusBoughtBoss: 'Куплено: можно начать битву с боссом!',
+                statusReadyBoss: 'Улучшение готово: войти в битву с боссом!',
+                languageTitle: 'Языки',
+                languageSubtitle: 'Выберите язык.',
+                languageEnglish: 'English',
+                languageRussian: 'Русский',
+                close: 'Закрыть',
+                introCutsceneLines: [
+                    'На Землю упал метеорит, высвободив древнее зло, и все думали, что спасения нет...',
+                    'Но появился неизвестный герой, которому было суждено победить зло, выпущенное метеоритом.',
+                    'Ты и есть этот герой'
+                ],
+                endCutsceneLines: [
+                    'После того как герой одержал победу над злом, оно исчезло навсегда.',
+                    'Конец?'
+                ]
+            }
+        };
+
+        const countElement = document.getElementById('count');
+        const bunnyButton = document.getElementById('bunnyButton');
+        const bunnyImage = document.getElementById('bunnyImage');
+        const doublePointsButton = document.getElementById('doublePointsButton');
+        const upgradeStatus = document.getElementById('upgradeStatus');
+        const world2Button = document.getElementById('world2Button');
+        const world2Status = document.getElementById('world2Status');
+        const world3Button = document.getElementById('world3Button');
+        const world3Status = document.getElementById('world3Status');
+        const world4Button = document.getElementById('world4Button');
+        const world4Status = document.getElementById('world4Status');
+        const world5Button = document.getElementById('world5Button');
+        const world5Status = document.getElementById('world5Status');
+        const bossBattleButton = document.getElementById('bossBattleButton');
+        const bossBattleStatus = document.getElementById('bossBattleStatus');
+        const bossBattle = document.getElementById('bossBattle');
+        const bossBattleCloseButton = document.getElementById('bossBattleCloseButton');
+        const bossHealthFill = document.getElementById('bossHealthFill');
+        const bossHealthText = document.getElementById('bossHealthText');
+        const bossEnemyImage = document.getElementById('bossEnemyImage');
+        const bossEnemyButton = document.getElementById('bossEnemyButton');
+        const bossEnemyName = document.getElementById('bossEnemyName');
+        const bossMessage = document.getElementById('bossMessage');
+        const bossBunnyButton = document.getElementById('bossBunnyButton');
+        const bossBunnyImage = document.getElementById('bossBunnyImage');
+        const playerNicknameElement = document.getElementById('playerNickname');
+        const openMainMenuButton = document.getElementById('openMainMenuButton');
+        const resetPointsButton = document.getElementById('resetPointsButton');
+        const resetUpgradesButton = document.getElementById('resetUpgradesButton');
+        const mainMenu = document.getElementById('mainMenu');
+        const continueButton = document.getElementById('continueButton');
+        const newGameButton = document.getElementById('newGameButton');
+        const languagesButton = document.getElementById('languagesButton');
+        const nicknameModal = document.getElementById('nicknameModal');
+        const nicknameInput = document.getElementById('nicknameInput');
+        const saveNicknameButton = document.getElementById('saveNicknameButton');
+        const languageModal = document.getElementById('languageModal');
+        const languageEnButton = document.getElementById('languageEnButton');
+        const languageRuButton = document.getElementById('languageRuButton');
+        const languageCloseButton = document.getElementById('languageCloseButton');
+        const introCutscene = document.getElementById('introCutscene');
+        const cutsceneText = document.getElementById('cutsceneText');
+        const cutsceneHero = document.getElementById('cutsceneHero');
+        const endCutscene = document.getElementById('endCutscene');
+        const endCutsceneText = document.getElementById('endCutsceneText');
+        let cutsceneLines = translations[currentLanguage].introCutsceneLines;
+        let endCutsceneLines = translations[currentLanguage].endCutsceneLines;
+        let cutsceneStep = 0;
+        let endCutsceneStep = 0;
+
+        const resetRuntimeState = () => {
+            count = 0;
+            pointsPerClick = 1;
+            isDoubleUpgradeBought = false;
+            isWorld2Bought = false;
+            isWorld3Bought = false;
+            isWorld4Bought = false;
+            isWorld5Bought = false;
+            isBossBattleBought = false;
+            isBossBattleActive = false;
+            currentEnemyIndex = 0;
+            bossHealth = 1000;
+            playerNickname = 'Hero';
+        };
+
+        const normalizeNickname = (value) => {
+            const cleaned = (value || '').trim().replace(/\s+/g, ' ');
+            return cleaned || 'Hero';
+        };
+
+        const t = (key, params = {}) => {
+            const template = translations[currentLanguage]?.[key] ?? translations.en[key] ?? key;
+            return template.replace(/\{(\w+)\}/g, (_, token) => String(params[token] ?? ''));
+        };
+
+        const applyTranslations = () => {
+            document.documentElement.lang = currentLanguage;
+            document.title = t('appTitle');
+
+            document.getElementById('mainMenuTitle').textContent = t('mainMenuTitle');
+            document.getElementById('mainMenuSubtitle').textContent = t('mainMenuSubtitle');
+            newGameButton.textContent = t('newGame');
+            languagesButton.textContent = t('languages');
+
+            document.getElementById('nicknameTitle').textContent = t('nicknameTitle');
+            document.getElementById('nicknameSubtitle').textContent = t('nicknameSubtitle');
+            nicknameInput.placeholder = t('nicknamePlaceholder');
+            saveNicknameButton.textContent = t('startGame');
+
+            document.getElementById('languageTitle').textContent = t('languageTitle');
+            document.getElementById('languageSubtitle').textContent = t('languageSubtitle');
+            languageEnButton.textContent = t('languageEnglish');
+            languageRuButton.textContent = t('languageRussian');
+            languageCloseButton.textContent = t('close');
+
+            document.getElementById('scoreLabel').textContent = t('score');
+            openMainMenuButton.textContent = t('openMainMenu');
+            resetPointsButton.textContent = t('resetPoints');
+            resetUpgradesButton.textContent = t('resetUpgrades');
+            document.getElementById('gameTitle').textContent = t('gameTitle');
+
+            document.getElementById('upgradesTitle').textContent = t('upgradesTitle');
+            document.getElementById('doubleDesc').textContent = t('doubleDesc');
+            doublePointsButton.textContent = t('doubleButton');
+            document.getElementById('world2Desc').textContent = t('world2Desc');
+            world2Button.textContent = t('world2Button');
+            document.getElementById('world3Desc').textContent = t('world3Desc');
+            world3Button.textContent = t('world3Button');
+            document.getElementById('world4Desc').textContent = t('world4Desc');
+            world4Button.textContent = t('world4Button');
+            document.getElementById('world5Desc').textContent = t('world5Desc');
+            world5Button.textContent = t('world5Button');
+            document.getElementById('bossBattleDesc').textContent = t('bossBattleDesc');
+            bossBattleButton.textContent = t('bossBattleButton');
+
+            bossBattleCloseButton.textContent = t('exitBattle');
+            document.getElementById('bossTitle').textContent = t('bossBattle');
+            document.getElementById('bossHealthLabel').textContent = t('bossHp');
+            if (!isBossBattleActive) {
+                bossEnemyName.textContent = t('enemyName', { number: 1 });
+                bossMessage.textContent = t('bossClick');
+            }
+
+            cutsceneLines = translations[currentLanguage].introCutsceneLines;
+            endCutsceneLines = translations[currentLanguage].endCutsceneLines;
+
+            if (!introCutscene.classList.contains('is-hidden')) {
+                renderCutsceneStep();
+            }
+            if (!endCutscene.classList.contains('is-hidden')) {
+                renderEndCutsceneStep();
+            }
+        };
+
+        const setLanguage = (language) => {
+            if (!translations[language]) {
+                return;
+            }
+
+            currentLanguage = language;
+            localStorage.setItem(languageKey, currentLanguage);
+            applyTranslations();
+            refreshMainMenuButtons();
+            updateUpgradeState();
+            if (isBossBattleActive && currentEnemyIndex < enemyHealths.length) {
+                updateBossDisplay();
+            }
+        };
+
+        const getBunnyImageSources = (world) => {
+            if (world <= 1) {
+                return {
+                    idle: 'Hero/BunnyIdle.png',
+                    hover: 'Hero/BunnyHover.png'
+                };
+            }
+
+            return {
+                idle: `Hero/BunnyIdleW${world}.png`,
+                hover: `Hero/BunnyHoverW${world}.png`
+            };
+        };
+
+        const getCurrentWorld = () => {
+            if (isWorld5Bought) {
+                return 5;
+            }
+
+            if (isWorld4Bought) {
+                return 4;
+            }
+
+            if (isWorld3Bought) {
+                return 3;
+            }
+
+            if (isWorld2Bought) {
+                return 2;
+            }
+
+            return 1;
+        };
+
+        const recalculatePointsPerClick = () => {
+            if (isWorld4Bought || isWorld5Bought) {
+                pointsPerClick = 10;
+                return;
+            }
+
+            if (isWorld3Bought) {
+                pointsPerClick = 4;
+                return;
+            }
+
+            if (isDoubleUpgradeBought) {
+                pointsPerClick = 2;
+                return;
+            }
+
+            pointsPerClick = 1;
+        };
+
+        const saveGame = () => {
+            const gameState = {
+                count,
+                pointsPerClick,
+                isDoubleUpgradeBought,
+                isWorld2Bought,
+                isWorld3Bought,
+                isWorld4Bought,
+                isWorld5Bought,
+                isBossBattleBought,
+                playerNickname
+            };
+
+            localStorage.setItem(saveKey, JSON.stringify(gameState));
+        };
+
+        const hasSavedGame = () => {
+            return Boolean(localStorage.getItem(saveKey));
+        };
+
+        const loadGame = () => {
+            const rawState = localStorage.getItem(saveKey);
+            if (!rawState) {
+                return;
+            }
+
+            try {
+                const gameState = JSON.parse(rawState);
+                count = Number(gameState.count) || 0;
+                pointsPerClick = Number(gameState.pointsPerClick) || 1;
+                isDoubleUpgradeBought = Boolean(gameState.isDoubleUpgradeBought);
+                isWorld2Bought = Boolean(gameState.isWorld2Bought);
+                isWorld3Bought = Boolean(gameState.isWorld3Bought);
+                isWorld4Bought = Boolean(gameState.isWorld4Bought);
+                isWorld5Bought = Boolean(gameState.isWorld5Bought);
+                isBossBattleBought = Boolean(gameState.isBossBattleBought);
+                playerNickname = normalizeNickname(gameState.playerNickname);
+            } catch {
+                count = 0;
+                pointsPerClick = 1;
+                isDoubleUpgradeBought = false;
+                isWorld2Bought = false;
+                isWorld3Bought = false;
+                isWorld4Bought = false;
+                isWorld5Bought = false;
+                isBossBattleBought = false;
+                playerNickname = 'Hero';
+            }
+
+            recalculatePointsPerClick();
+        };
+
+        const hideMainMenu = () => {
+            mainMenu.classList.add('is-hidden');
+            document.body.classList.remove('menu-open');
+        };
+
+        const showMainMenu = () => {
+            refreshMainMenuButtons();
+            mainMenu.classList.remove('is-hidden');
+            document.body.classList.add('menu-open');
+        };
+
+        const refreshMainMenuButtons = () => {
+            const hasSave = hasSavedGame();
+            continueButton.disabled = !hasSave;
+            if (hasSave) {
+                continueButton.textContent = t('continue');
+            } else {
+                continueButton.textContent = t('continueNoSave');
+            }
+        };
+
+        const hideCutscene = () => {
+            introCutscene.classList.add('is-hidden');
+            document.body.classList.remove('menu-open');
+        };
+
+        const showNicknameModal = () => {
+            nicknameInput.value = '';
+            nicknameModal.classList.remove('is-hidden');
+            document.body.classList.add('menu-open');
+            nicknameInput.focus();
+        };
+
+        const hideNicknameModal = () => {
+            nicknameModal.classList.add('is-hidden');
+            document.body.classList.remove('menu-open');
+        };
+
+        const showLanguageModal = () => {
+            languageModal.classList.remove('is-hidden');
+        };
+
+        const hideLanguageModal = () => {
+            languageModal.classList.add('is-hidden');
+        };
+
+        const renderCutsceneStep = () => {
+            cutsceneText.textContent = cutsceneLines[cutsceneStep] || '';
+            cutsceneText.classList.remove('is-animating');
+            void cutsceneText.offsetWidth;
+            cutsceneText.classList.add('is-animating');
+
+            if (cutsceneStep >= 2) {
+                cutsceneHero.classList.remove('is-hidden');
+            } else {
+                cutsceneHero.classList.add('is-hidden');
+            }
+        };
+
+        const startIntroCutscene = () => {
+            cutsceneStep = 0;
+            renderCutsceneStep();
+            introCutscene.classList.remove('is-hidden');
+            document.body.classList.add('menu-open');
+        };
+
+        const renderEndCutsceneStep = () => {
+            endCutsceneText.textContent = endCutsceneLines[endCutsceneStep] || '';
+            endCutsceneText.classList.remove('is-animating');
+            void endCutsceneText.offsetWidth;
+            endCutsceneText.classList.add('is-animating');
+        };
+
+        const startEndCutscene = () => {
+            endCutsceneStep = 0;
+            renderEndCutsceneStep();
+            endCutscene.classList.remove('is-hidden');
+            document.body.classList.add('menu-open');
+        };
+
+        const hideEndCutscene = () => {
+            endCutscene.classList.add('is-hidden');
+            document.body.classList.remove('menu-open');
+        };
+
+        const updateUpgradeState = () => {
+            if (isDoubleUpgradeBought) {
+                doublePointsButton.disabled = true;
+                upgradeStatus.textContent = t('statusBoughtClicks', { value: pointsPerClick });
+            } else if (count >= unlockScore) {
+                doublePointsButton.disabled = false;
+                upgradeStatus.textContent = t('statusReadyDouble');
+            } else {
+                doublePointsButton.disabled = true;
+                upgradeStatus.textContent = t('statusNeedPoints', { value: unlockScore - count });
+            }
+
+            if (isWorld2Bought) {
+                world2Button.disabled = true;
+                world2Status.textContent = t('statusBoughtWorld2');
+            } else if (count >= world2UnlockScore) {
+                world2Button.disabled = false;
+                world2Status.textContent = t('statusReadyWorld2');
+            } else {
+                world2Button.disabled = true;
+                world2Status.textContent = t('statusNeedPoints', { value: world2UnlockScore - count });
+            }
+
+            if (isWorld3Bought) {
+                world3Button.disabled = true;
+                world3Status.textContent = t('statusBoughtWorld3');
+            } else if (!isWorld2Bought) {
+                world3Button.disabled = true;
+                world3Status.textContent = t('statusNeedWorld2');
+            } else if (count >= world3UnlockScore) {
+                world3Button.disabled = false;
+                world3Status.textContent = t('statusReadyWorld3');
+            } else {
+                world3Button.disabled = true;
+                world3Status.textContent = t('statusNeedPoints', { value: world3UnlockScore - count });
+            }
+
+            if (isWorld4Bought) {
+                world4Button.disabled = true;
+                world4Status.textContent = t('statusBoughtWorld4');
+            } else if (!isWorld3Bought) {
+                world4Button.disabled = true;
+                world4Status.textContent = t('statusNeedWorld3');
+            } else if (count >= world4UnlockScore) {
+                world4Button.disabled = false;
+                world4Status.textContent = t('statusReadyWorld4');
+            } else {
+                world4Button.disabled = true;
+                world4Status.textContent = t('statusNeedPoints', { value: world4UnlockScore - count });
+            }
+
+            if (isWorld5Bought) {
+                world5Button.disabled = true;
+                world5Status.textContent = t('statusBoughtWorld5');
+            } else if (!isWorld4Bought) {
+                world5Button.disabled = true;
+                world5Status.textContent = t('statusNeedWorld4');
+            } else if (count >= world5UnlockScore) {
+                world5Button.disabled = false;
+                world5Status.textContent = t('statusReadyWorld5');
+            } else {
+                world5Button.disabled = true;
+                world5Status.textContent = t('statusNeedPoints', { value: world5UnlockScore - count });
+            }
+
+            if (isBossBattleBought) {
+                bossBattleButton.disabled = true;
+                bossBattleStatus.textContent = t('statusBoughtBoss');
+            } else if (count >= bossBattleUnlockScore) {
+                bossBattleButton.disabled = false;
+                bossBattleStatus.textContent = t('statusReadyBoss');
+            } else {
+                bossBattleButton.disabled = true;
+                bossBattleStatus.textContent = t('statusNeedPoints', { value: bossBattleUnlockScore - count });
+            }
+        };
+
+        const renderGameState = () => {
+            countElement.textContent = count;
+            playerNicknameElement.textContent = playerNickname;
+            document.body.classList.remove('world-2', 'world-3', 'world-4', 'world-5');
+
+            const world = getCurrentWorld();
+            if (world > 1) {
+                document.body.classList.add(`world-${world}`);
+            }
+
+            setIdle();
+        };
+
+        const setIdle = () => {
+            const world = getCurrentWorld();
+            const bunnySources = getBunnyImageSources(world);
+            bunnyImage.src = bunnySources.idle;
+        };
+
+        const setHover = () => {
+            const world = getCurrentWorld();
+            const bunnySources = getBunnyImageSources(world);
+            bunnyImage.src = bunnySources.hover;
+        };
+
+        const showPlusValue = (value, x, y) => {
+            const plusOne = document.createElement('span');
+            plusOne.className = 'floating-plus';
+            plusOne.textContent = `+${value}`;
+            plusOne.style.left = `${x}px`;
+            plusOne.style.top = `${y}px`;
+
+            document.body.appendChild(plusOne);
+            plusOne.addEventListener('animationend', () => {
+                plusOne.remove();
+            });
+        };
+
+        bunnyButton.addEventListener('mousedown', setHover);
+        bunnyButton.addEventListener('mouseup', setIdle);
+        bunnyButton.addEventListener('mouseleave', setIdle);
+        bunnyButton.addEventListener('touchstart', setHover, { passive: true });
+        bunnyButton.addEventListener('touchend', setIdle);
+        bunnyButton.addEventListener('touchcancel', setIdle);
+
+        bunnyButton.addEventListener('click', (event) => {
+            if (isBossBattleActive) {
+                damageEnemy();
+                return;
+            }
+
+            count += pointsPerClick;
+            countElement.textContent = count;
+            updateUpgradeState();
+            saveGame();
+
+            const rect = bunnyButton.getBoundingClientRect();
+            const x = event.clientX || rect.left + rect.width / 2;
+            const y = event.clientY || rect.top + rect.height / 2;
+            showPlusValue(pointsPerClick, x, y);
+        });
+
+        doublePointsButton.addEventListener('click', () => {
+            if (count < unlockScore || isDoubleUpgradeBought) {
+                return;
+            }
+
+            isDoubleUpgradeBought = true;
+            recalculatePointsPerClick();
+            updateUpgradeState();
+            saveGame();
+        });
+
+        world2Button.addEventListener('click', () => {
+            if (count < world2UnlockScore || isWorld2Bought) {
+                return;
+            }
+
+            isWorld2Bought = true;
+            recalculatePointsPerClick();
+            updateUpgradeState();
+            renderGameState();
+            saveGame();
+        });
+
+        world3Button.addEventListener('click', () => {
+            if (!isWorld2Bought || count < world3UnlockScore || isWorld3Bought) {
+                return;
+            }
+
+            count -= world3UnlockScore;
+            isWorld3Bought = true;
+            recalculatePointsPerClick();
+            updateUpgradeState();
+            renderGameState();
+            saveGame();
+        });
+
+        world4Button.addEventListener('click', () => {
+            if (!isWorld3Bought || count < world4UnlockScore || isWorld4Bought) {
+                return;
+            }
+
+            count -= world4UnlockScore;
+            isWorld4Bought = true;
+            recalculatePointsPerClick();
+            updateUpgradeState();
+            renderGameState();
+            saveGame();
+        });
+
+        world5Button.addEventListener('click', () => {
+            if (!isWorld4Bought || count < world5UnlockScore || isWorld5Bought) {
+                return;
+            }
+
+            count -= world5UnlockScore;
+            isWorld5Bought = true;
+            recalculatePointsPerClick();
+            updateUpgradeState();
+            renderGameState();
+            saveGame();
+        });
+
+        resetPointsButton.addEventListener('click', () => {
+            count = 0;
+            renderGameState();
+            updateUpgradeState();
+            saveGame();
+        });
+
+        resetUpgradesButton.addEventListener('click', () => {
+            isDoubleUpgradeBought = false;
+            isWorld2Bought = false;
+            isWorld3Bought = false;
+            isWorld4Bought = false;
+            isWorld5Bought = false;
+            isBossBattleBought = false;
+            isBossBattleActive = false;
+            currentEnemyIndex = 0;
+            bossHealth = 1000;
+            hideBossBattle();
+            recalculatePointsPerClick();
+            renderGameState();
+            updateUpgradeState();
+            saveGame();
+        });
+
+        openMainMenuButton.addEventListener('click', () => {
+            showMainMenu();
+        });
+
+        const startBossBattle = () => {
+            if (count < bossBattleUnlockScore || isBossBattleBought) {
+                return;
+            }
+
+            count -= bossBattleUnlockScore;
+            isBossBattleBought = true;
+            isBossBattleActive = true;
+            currentEnemyIndex = 0;
+            bossHealth = enemyHealths[0];
+            updateUpgradeState();
+            renderGameState();
+            showBossBattle();
+            saveGame();
+        };
+
+        const showBossBattle = () => {
+            bossBattle.classList.remove('is-hidden');
+            document.querySelector('.clicker').classList.add('is-hidden');
+            document.querySelector('.upgrade-panel').classList.add('is-hidden');
+            document.querySelector('.score-hud').classList.add('is-hidden');
+            document.querySelector('.open-menu-button').classList.add('is-hidden');
+            bossBunnyImage.src = 'Hero/BunnyIdleW5.png';
+            bossMessage.textContent = t('bossClick');
+            updateBossDisplay();
+        };
+
+        const hideBossBattle = () => {
+            bossBattle.classList.add('is-hidden');
+            document.querySelector('.clicker').classList.remove('is-hidden');
+            document.querySelector('.upgrade-panel').classList.remove('is-hidden');
+            document.querySelector('.score-hud').classList.remove('is-hidden');
+            document.querySelector('.open-menu-button').classList.remove('is-hidden');
+            isBossBattleActive = false;
+        };
+
+        const updateBossDisplay = () => {
+            const percentHealth = (bossHealth / enemyHealths[currentEnemyIndex]) * 100;
+            bossHealthFill.style.width = `${Math.max(0, percentHealth)}%`;
+            bossHealthText.textContent = `${Math.max(0, bossHealth)} / ${enemyHealths[currentEnemyIndex]}`;
+            
+            bossEnemyName.textContent = t('enemyName', { number: currentEnemyIndex + 1 });
+            bossEnemyImage.src = `Boss Battle/Enemy${currentEnemyIndex + 1}.png`;
+        };
+
+        const damageEnemy = () => {
+            if (!isBossBattleActive) return;
+
+            bossBunnyImage.src = 'Hero/BunnyHoverW5.png';
+            setTimeout(() => {
+                if (isBossBattleActive) {
+                    bossBunnyImage.src = 'Hero/BunnyIdleW5.png';
+                }
+            }, 140);
+
+            bossHealth -= damagePerHit;
+            
+            bossEnemyImage.classList.remove('is-shaking');
+            void bossEnemyImage.offsetWidth;
+            bossEnemyImage.classList.add('is-shaking');
+
+            updateBossDisplay();
+
+            if (bossHealth <= 0) {
+                currentEnemyIndex += 1;
+                
+                if (currentEnemyIndex >= enemyHealths.length) {
+                    winBossBattle();
+                    return;
+                }
+                
+                bossHealth = enemyHealths[currentEnemyIndex];
+                bossMessage.textContent = t('defeatedEnemy', { number: currentEnemyIndex + 1 });
+                updateBossDisplay();
+                setTimeout(() => {
+                    bossMessage.textContent = t('bossClick');
+                }, 2000);
+            }
+        };
+
+        const winBossBattle = () => {
+            bossMessage.textContent = t('youWin');
+            bossEnemyButton.disabled = true;
+            bossEnemyImage.style.opacity = '0';
+            bunnyButton.disabled = true;
+            setTimeout(() => {
+                count += 5000;
+                renderGameState();
+                updateUpgradeState();
+                saveGame();
+                hideBossBattle();
+                bunnyButton.disabled = false;
+                bossEnemyButton.disabled = false;
+                bossEnemyImage.style.opacity = '1';
+                bossBunnyImage.src = 'Hero/BunnyIdleW5.png';
+                startEndCutscene();
+            }, 2500);
+        };
+
+        continueButton.addEventListener('click', () => {
+            if (!hasSavedGame()) {
+                return;
+            }
+
+            loadGame();
+            renderGameState();
+            updateUpgradeState();
+            hideMainMenu();
+        });
+
+        newGameButton.addEventListener('click', () => {
+            localStorage.removeItem(saveKey);
+            resetRuntimeState();
+            recalculatePointsPerClick();
+            renderGameState();
+            updateUpgradeState();
+            saveGame();
+            hideMainMenu();
+            startIntroCutscene();
+        });
+
+        languagesButton.addEventListener('click', () => {
+            showLanguageModal();
+        });
+
+        languageEnButton.addEventListener('click', () => {
+            setLanguage('en');
+            hideLanguageModal();
+        });
+
+        languageRuButton.addEventListener('click', () => {
+            setLanguage('ru');
+            hideLanguageModal();
+        });
+
+        languageCloseButton.addEventListener('click', () => {
+            hideLanguageModal();
+        });
+
+        const confirmNickname = () => {
+            playerNickname = normalizeNickname(nicknameInput.value);
+            renderGameState();
+            saveGame();
+            hideNicknameModal();
+        };
+
+        saveNicknameButton.addEventListener('click', confirmNickname);
+
+        nicknameInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                confirmNickname();
+            }
+        });
+
+        bossBattleButton.addEventListener('click', startBossBattle);
+
+        bossBattleCloseButton.addEventListener('click', hideBossBattle);
+
+        bossBunnyButton.addEventListener('mousedown', () => {
+            const world = getCurrentWorld();
+            const bunnySources = getBunnyImageSources(world);
+            bossBunnyImage.src = bunnySources.hover;
+        });
+
+        bossBunnyButton.addEventListener('mouseup', () => {
+            const world = getCurrentWorld();
+            const bunnySources = getBunnyImageSources(world);
+            bossBunnyImage.src = bunnySources.idle;
+        });
+
+        bossBunnyButton.addEventListener('mouseleave', () => {
+            const world = getCurrentWorld();
+            const bunnySources = getBunnyImageSources(world);
+            bossBunnyImage.src = bunnySources.idle;
+        });
+
+        bossEnemyButton.addEventListener('click', (event) => {
+            if (isBossBattleActive) {
+                damageEnemy();
+                const rect = bossEnemyButton.getBoundingClientRect();
+                const x = event.clientX || rect.left + rect.width / 2;
+                const y = event.clientY || rect.top + rect.height / 2;
+                showPlusValue(damagePerHit, x, y);
+            }
+        });
+
+        introCutscene.addEventListener('click', () => {
+            cutsceneStep += 1;
+
+            if (cutsceneStep >= cutsceneLines.length) {
+                hideCutscene();
+                showNicknameModal();
+                return;
+            }
+
+            renderCutsceneStep();
+        });
+
+        endCutscene.addEventListener('click', () => {
+            endCutsceneStep += 1;
+
+            if (endCutsceneStep >= endCutsceneLines.length) {
+                hideEndCutscene();
+                showMainMenu();
+                return;
+            }
+
+            renderEndCutsceneStep();
+        });
+
+        if (!translations[currentLanguage]) {
+            currentLanguage = 'en';
+        }
+        applyTranslations();
+        document.body.classList.add('menu-open');
+        renderGameState();
+        updateUpgradeState();
+        refreshMainMenuButtons();
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,678 @@
+:root {
+    color-scheme: light;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: Arial, Helvetica, sans-serif;
+    background-color: #140e0a;
+    background-image: url('Worlds/World1.png');
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+    color: #ac110c;
+    padding-right: 340px;
+}
+
+body.menu-open {
+    overflow: hidden;
+}
+
+body.world-2 {
+    background-image: url('Worlds/World2.png');
+}
+
+body.world-3 {
+    background-image: url('Worlds/World3.png');
+}
+
+body.world-4 {
+    background-image: url('Worlds/World4.png');
+}
+
+body.world-5 {
+    background-image: url('Worlds/World5.png');
+}
+
+body.boss-battle-active {
+    background-image: url('BossBattle.png');
+    background-position: center;
+    background-size: cover;
+}
+
+.is-hidden {
+    display: none !important;
+}
+
+.clicker {
+    width: min(420px, 92vw);
+    background: #251212;
+    border-radius: 16px;
+    padding: 28px;
+    box-shadow: 0 10px 30px rgba(56, 17, 1, 0.596);
+    text-align: center;
+}
+
+h1 {
+    margin: 0 0 12px;
+    font-size: 1.9rem;
+}
+
+.main-menu {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: grid;
+    place-items: center;
+    background: #f57c1a;
+    backdrop-filter: blur(4px);
+}
+
+.main-menu.is-hidden {
+    display: none;
+}
+
+.main-menu-card {
+    width: min(420px, 92vw);
+    background: #251212;
+    color: #ffd6b5;
+    border-radius: 16px;
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.45);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+}
+
+.main-menu-card h2 {
+    margin: 0;
+    font-size: 1.6rem;
+}
+
+.main-menu-card p {
+    margin: 0 0 6px;
+    color: #ffbc8c;
+}
+
+.main-menu-button {
+    border: none;
+    border-radius: 12px;
+    padding: 13px 16px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    background: #f71414;
+    color: #ffffff;
+    transition: opacity 0.2s ease, transform 0.08s ease;
+}
+
+.main-menu-button:active {
+    transform: scale(0.98);
+}
+
+.main-menu-button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.cutscene {
+    position: fixed;
+    inset: 0;
+    z-index: 120;
+    background:
+        radial-gradient(circle at 50% 35%, rgba(255, 255, 255, 0.08), transparent 45%),
+        #000000;
+    color: #ffffff;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 24px;
+    padding: 28px;
+    cursor: pointer;
+    text-align: center;
+    animation: cutscene-fade-in 420ms ease-out;
+}
+
+.cutscene.is-hidden {
+    display: none;
+}
+
+.cutscene::after {
+    content: 'Click to continue';
+    position: absolute;
+    bottom: 26px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 0.9rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    animation: cutscene-pulse 1.6s ease-in-out infinite;
+}
+
+.cutscene-text {
+    margin: 0;
+    max-width: 860px;
+    font-size: clamp(1.1rem, 2.4vw, 1.7rem);
+    line-height: 1.45;
+    text-shadow: 0 2px 16px rgba(255, 255, 255, 0.22);
+}
+
+.cutscene-text.is-animating {
+    animation: cutscene-text-in 520ms ease-out;
+}
+
+.cutscene-hero {
+    width: min(300px, 65vw);
+    height: auto;
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+    filter: drop-shadow(0 14px 26px rgba(0, 0, 0, 0.55));
+    transition: opacity 360ms ease, transform 360ms ease, visibility 360ms;
+}
+
+.cutscene-hero.is-hidden {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(18px) scale(0.96);
+}
+
+.nickname-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 115;
+    display: grid;
+    place-items: center;
+    background: rgba(0, 0, 0, 0.72);
+    backdrop-filter: blur(4px);
+}
+
+.nickname-modal.is-hidden {
+    display: none;
+}
+
+.nickname-card {
+    width: min(420px, 92vw);
+    background: #251212;
+    color: #ffd6b5;
+    border-radius: 16px;
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.45);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+}
+
+.nickname-card h2 {
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+.nickname-card p {
+    margin: 0;
+    color: #ffbc8c;
+}
+
+.nickname-input {
+    border: 1px solid rgba(255, 214, 181, 0.35);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 1rem;
+    background: #130909;
+    color: #ffd6b5;
+    outline: none;
+}
+
+.nickname-input:focus {
+    border-color: #f71414;
+    box-shadow: 0 0 0 3px rgba(247, 20, 20, 0.2);
+}
+
+.player-nickname {
+    margin: 0 0 10px;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #ffbc8c;
+    letter-spacing: 0.02em;
+}
+
+@keyframes cutscene-fade-in {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes cutscene-text-in {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+        filter: blur(2px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+        filter: blur(0);
+    }
+}
+
+@keyframes cutscene-pulse {
+    0%,
+    100% {
+        opacity: 0.45;
+    }
+
+    50% {
+        opacity: 0.95;
+    }
+}
+
+.score-hud {
+    position: fixed;
+    top: 16px;
+    left: 16px;
+    z-index: 10;
+    padding: 10px 14px;
+    border-radius: 12px;
+    background: #251212;
+    box-shadow: 0 8px 18px rgba(56, 17, 1, 0.596);
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.score-value {
+    color: #f71414;
+}
+
+.reset-button {
+    position: fixed;
+    left: 16px;
+    bottom: 16px;
+    z-index: 11;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    background: #251212;
+    color: #ffd6b5;
+    box-shadow: 0 8px 18px rgba(56, 17, 1, 0.45);
+    transition: transform 0.08s ease, opacity 0.2s ease;
+}
+
+.reset-button:active {
+    transform: scale(0.98);
+}
+
+.reset-button:hover {
+    opacity: 0.92;
+}
+
+.reset-upgrades-button {
+    bottom: 64px;
+}
+
+.open-menu-button {
+    bottom: 112px;
+}
+
+.bunny-button {
+    border: none;
+    background: transparent;
+    padding: 0;
+    line-height: 0;
+    cursor: pointer;
+    transition: transform 0.08s ease;
+}
+
+.bunny-button:active {
+    transform: scale(0.97);
+}
+
+.bunny-image {
+    width: min(340px, 75vw);
+    height: auto;
+    display: block;
+    filter: drop-shadow(0 12px 24px rgba(25, 102, 255, 0.22));
+    user-select: none;
+    -webkit-user-drag: none;
+}
+
+.floating-plus {
+    position: fixed;
+    transform: translate(-50%, -50%);
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #ffffff;
+    pointer-events: none;
+    animation: float-up 700ms ease-out forwards;
+    text-shadow: 0 2px 6px rgba(255, 255, 255, 0.25);
+    z-index: 20;
+}
+
+@keyframes float-up {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, -50%);
+    }
+
+    20% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -110%);
+    }
+}
+
+.upgrade-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 320px;
+    height: 100vh;
+    background: #251212;
+    box-shadow: -10px 0 30px rgba(56, 17, 1, 0.45);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    color: #ffd6b5;
+    overflow-y: auto;
+}
+
+.upgrade-panel h2 {
+    margin: 0;
+    font-size: 1.4rem;
+}
+
+.upgrade-panel p {
+    margin: 0;
+    line-height: 1.4;
+}
+
+.upgrade-button {
+    border: none;
+    border-radius: 12px;
+    padding: 14px 16px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    background: #f71414;
+    color: #ffffff;
+    transition: opacity 0.2s ease, transform 0.08s ease;
+}
+
+.upgrade-button:active {
+    transform: scale(0.98);
+}
+
+.upgrade-button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.upgrade-status {
+    font-size: 0.95rem;
+    color: #ffbc8c;
+}
+
+.upgrade-divider {
+    border: none;
+    border-top: 1px solid rgba(255, 214, 181, 0.25);
+    margin: 4px 0;
+}
+
+@media (max-width: 920px) {
+    body {
+        padding-right: 0;
+        padding-bottom: 220px;
+    }
+
+    .reset-button {
+        bottom: 230px;
+    }
+
+    .reset-upgrades-button {
+        bottom: 278px;
+    }
+
+    .open-menu-button {
+        bottom: 326px;
+    }
+
+    .upgrade-panel {
+        top: auto;
+        bottom: 0;
+        width: 100%;
+        height: 320px;
+        box-shadow: 0 -10px 30px rgba(56, 17, 1, 0.45);
+    }
+}
+
+.boss-battle {
+    position: fixed;
+    inset: 0;
+    z-index: 110;
+    background: url('Boss Battle/BossBattle.png') center/cover no-repeat, rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 24px;
+    padding: 28px;
+    min-height: 100vh;
+}
+
+.boss-battle.is-hidden {
+    display: none;
+}
+
+.boss-exit-button {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    border: 2px solid #ffffff;
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    background: rgba(0, 0, 0, 0.5);
+    color: #ffffff;
+    transition: background 0.2s ease, transform 0.08s ease;
+}
+
+.boss-exit-button:hover {
+    background: rgba(0, 0, 0, 0.7);
+}
+
+.boss-exit-button:active {
+    transform: scale(0.95);
+}
+
+.boss-title {
+    margin: 0;
+    color: #ff3333;
+    font-size: 3rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    text-shadow: 0 4px 16px rgba(255, 51, 51, 0.8);
+}
+
+.boss-health-bar-container {
+    width: min(600px, 90vw);
+    text-align: center;
+}
+
+.boss-health-label {
+    margin: 0 0 8px;
+    color: #ffffff;
+    font-size: 1.1rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.boss-health-bar {
+    width: 100%;
+    height: 36px;
+    background: rgba(0, 0, 0, 0.6);
+    border: 3px solid #ff3333;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.8), 0 0 15px rgba(255, 51, 51, 0.5);
+}
+
+.boss-health-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #ff3333, #ff6666, #ff3333);
+    width: 100%;
+    transition: width 0.15s ease;
+    box-shadow: inset 0 0 10px rgba(255, 51, 51, 0.6);
+}
+
+.boss-health-text {
+    margin: 8px 0 0;
+    color: #6e0000;
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.boss-arena {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 40px;
+    margin: 20px 0;
+    position: relative;
+    min-height: 300px;
+}
+
+.boss-enemy {
+    width: min(200px, 50vw);
+    height: auto;
+    filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.9));
+}
+
+.boss-enemy.is-shaking {
+    animation: boss-shake 200ms ease-in-out;
+}
+
+.boss-enemy-button {
+    border: none;
+    background: transparent;
+    padding: 0;
+    line-height: 0;
+    cursor: pointer;
+    transition: transform 0.08s ease;
+}
+
+.boss-enemy-button:active {
+    transform: scale(0.97);
+}
+
+.boss-bunny-button {
+    border: none;
+    background: transparent;
+    padding: 0;
+    line-height: 0;
+    cursor: pointer;
+    transition: transform 0.08s ease;
+}
+
+.boss-bunny-button:active {
+    transform: scale(0.97);
+}
+
+#bossBunnyImage {
+    width: min(200px, 50vw);
+    height: auto;
+    display: block;
+    filter: drop-shadow(0 12px 24px rgba(25, 102, 255, 0.4));
+    user-select: none;
+    -webkit-user-drag: none;
+}
+
+.boss-weapon {
+    width: 100px;
+    height: auto;
+    filter: drop-shadow(0 4px 12px rgba(255, 255, 255, 0.6));
+    position: absolute;
+    right: 40px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.boss-weapon.is-rotating {
+    animation: boss-weapon-rotate 250ms ease-in-out;
+}
+
+.boss-info {
+    text-align: center;
+    color: #ffffff;
+    margin-top: 20px;
+}
+
+.boss-info p {
+    margin: 6px 0;
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+#bossEnemyName {
+    color: #ac1a00;
+    font-size: 1.5rem;
+    text-transform: uppercase;
+}
+
+#bossMessage {
+    color: #290000;
+    opacity: 0.95;
+}
+
+@keyframes boss-shake {
+    0%, 100% {
+        transform: translateX(0);
+    }
+    25% {
+        transform: translateX(-8px);
+    }
+    50% {
+        transform: translateX(8px);
+    }
+    75% {
+        transform: translateX(-8px);
+    }
+}
+
+@keyframes boss-weapon-rotate {
+    0% {
+        transform: rotate(0deg);
+    }
+    50% {
+        transform: rotate(15deg);
+    }
+    100% {
+        transform: rotate(0deg);
+    }
+}
