@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mario Mini Game</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <main class="page">
+        <header class="hud">
+            <div class="hud-item">SCORE: <span id="score">0</span></div>
+            <div class="hud-item">LIVES: <span id="lives">3</span></div>
+            <div class="hud-item">COINS: <span id="coins">0</span>/8</div>
+        </header>
+
+        <section class="game-frame" aria-label="Mario mini platform game">
+            <div id="game-world" class="game-world">
+                <div id="clouds" class="clouds" aria-hidden="true"></div>
+                <div id="platforms" class="platforms" aria-hidden="true"></div>
+                <div id="coins-layer" class="coins-layer" aria-hidden="true"></div>
+                <div id="enemies-layer" class="enemies-layer" aria-hidden="true"></div>
+                <img id="player" class="player" src="Mario.png" alt="Mario character">
+                <div class="goal" id="goal" title="Reach the flag"></div>
+            </div>
+            <div id="message" class="message">Use Arrow Keys or A/D to move, Space/W/ArrowUp to jump.</div>
+        </section>
+
+        <div class="controls">
+            <button id="restartButton" type="button">Restart Game</button>
+            <button id="catMarioButton" type="button">Cat Mario</button>
+            <button id="resetCatMarioButton" type="button">reset Mario Cat</button>
+            <button id="level2Button" type="button">Level 2</button>
+            <button id="backLevel1Button" type="button" hidden>Back to level 1</button>
+            <button id="pauseButton" type="button">Pause</button>
+            <button id="hintButton" type="button">Hint</button>
+        </div>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
