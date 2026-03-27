@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Muusikaline Pilt</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="ambient-orb orb-a"></div>
+    <div class="ambient-orb orb-b"></div>
+
+    <main class="layout">
+        <section class="hero card">
+            <p class="eyebrow">JavaScript + Node.js</p>
+            <h1>Loo pildist oma muusikapala</h1>
+            <p class="lead">
+                Lae foto, rakendus analüüsib värvitoonid ja objektid ning ehitab neist unikaalse rütmi,
+                bassi ja meloodia.
+            </p>
+
+            <div class="upload-row">
+                <label class="upload-btn" for="imageInput">Vali foto</label>
+                <label class="upload-btn" for="multiImageInput">Vali 2-4 pilti</label>
+                <input id="imageInput" type="file" accept="image/*">
+                <input id="multiImageInput" type="file" accept="image/*" multiple>
+                <button id="analyzeBtn" class="action-btn" disabled>Analüüsi</button>
+                <button id="cameraBtn" class="ghost-btn">Kaamera režiim</button>
+            </div>
+
+            <div class="creative-row">
+                <label for="stylePreset">Stiil:</label>
+                <select id="stylePreset" class="select-control">
+                    <option value="cinematic">Cinematic</option>
+                    <option value="lofi">Lo-fi</option>
+                    <option value="edm">EDM</option>
+                    <option value="ambient">Ambient</option>
+                    <option value="jazz">Jazz</option>
+                </select>
+                <label for="coPrompt">AI kaashelilooja tekst:</label>
+                <input id="coPrompt" class="text-control" type="text" placeholder="nt vihmane linn öösel">
+            </div>
+
+            <div class="player-controls">
+                <button id="playBtn" class="action-btn" disabled>Mängi</button>
+                <button id="stopBtn" class="ghost-btn" disabled>Peata</button>
+                <button id="regenerateBtn" class="ghost-btn" disabled>Loo uus versioon</button>
+                <button id="previewBtn" class="ghost-btn" disabled>8s eelkuulamine</button>
+                <button id="midiBtn" class="ghost-btn" disabled>Ekspordi MIDI</button>
+                <button id="shareBtn" class="ghost-btn" disabled>Loo jagamislink</button>
+            </div>
+
+            <p id="shareOutput" class="share-output"></p>
+        </section>
+
+        <section class="preview card">
+            <h2>Foto eelvaade</h2>
+            <div class="image-shell">
+                <img id="imagePreview" alt="Üles laetud foto eelvaade">
+                <canvas id="beatCanvas"></canvas>
+                <video id="cameraPreview" autoplay muted playsinline></video>
+                <div id="placeholder" class="placeholder">Foto ilmub siia</div>
+            </div>
+        </section>
+
+        <section class="analysis card">
+            <h2>Analüüs</h2>
+            <div class="stat-grid">
+                <article>
+                    <h3>Domineerivad värvid</h3>
+                    <div id="palette" class="palette"></div>
+                </article>
+                <article>
+                    <h3>Leitud objektid</h3>
+                    <ul id="objectList" class="object-list"></ul>
+                </article>
+                <article>
+                    <h3>Muusika parameetrid</h3>
+                    <ul id="musicInfo" class="music-info"></ul>
+                </article>
+                <article>
+                    <h3>Meeleolu</h3>
+                    <ul id="emotionInfo" class="music-info"></ul>
+                </article>
+                <article>
+                    <h3>Objekt -> instrument</h3>
+                    <ul id="objectInstrumentInfo" class="music-info"></ul>
+                </article>
+                <article>
+                    <h3>Ajajoon</h3>
+                    <ul id="timelineInfo" class="music-info"></ul>
+                </article>
+            </div>
+            <p id="status" class="status">Laadi pilt üles, et alustada.</p>
+        </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tone@14.8.49/build/Tone.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
